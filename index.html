@@ -1,854 +1,875 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Workspace — Painel de Clientes</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-  <style>
-    :root {
-      --bg: #e9e9e7;
-      --panel: #f0f0ee;
-      --panel-2: #e7e7e4;
-      --ink: #20211f;
-      --muted: #92938f;
-      --line: rgba(32,33,31,.09);
-      --dark: #242523;
-      --accent: #b7d8ca;
-      --shadow: 0 18px 50px rgba(31,32,30,.09), inset 1px 1px 0 rgba(255,255,255,.75);
-    }
-    * { box-sizing: border-box; }
-    html, body { height: 100%; }
-    body {
-      margin: 0; padding: 24px;
-      color: var(--ink); background: var(--bg);
-      font-family: "DM Sans", sans-serif;
-      background-image: radial-gradient(circle at 15% 12%, #f6f6f3 0, transparent 33%), radial-gradient(circle at 90% 85%, #dededb 0, transparent 35%);
-    }
-    button, input { font: inherit; }
-    button { cursor: pointer; }
-
-    /* ============ LOGIN ============ */
-    .login-wrap {
-      min-height: calc(100vh - 48px);
-      display: flex; align-items: center; justify-content: center;
-      padding: 20px;
-    }
-    .login-card {
-      width: 100%; max-width: 420px;
-      background: rgba(241,241,238,.78);
-      border: 1px solid rgba(255,255,255,.72);
-      box-shadow: var(--shadow); backdrop-filter: blur(18px);
-      border-radius: 23px; padding: 38px 34px 30px;
-      animation: rise .5s cubic-bezier(.2,.8,.2,1);
-    }
-    @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
-    .login-logo {
-      width: 52px; height: 52px; border-radius: 16px;
-      background: var(--dark); color: #f3f3ef;
-      display: grid; place-items: center;
-      font-size: 24px; margin-bottom: 22px;
-      box-shadow: 0 12px 25px rgba(0,0,0,.18);
-    }
-    .login-card h1 { font: 500 24px "Manrope",sans-serif; letter-spacing: -.6px; margin: 0 0 6px; }
-    .login-card .sub { color: var(--muted); font-size: 13px; margin: 0 0 26px; }
-    .login-card label {
-      display: block; font-size: 11px; color: #999a96;
-      margin-bottom: 6px; text-transform: uppercase; letter-spacing: .06em;
-    }
-    .login-card input {
-      width: 100%; padding: 11px 13px;
-      background: #ecece9; border: 1px solid #d8d8d4;
-      border-radius: 10px; font-size: 13px; color: #333; outline: none;
-      transition: .2s; margin-bottom: 14px;
-    }
-    .login-card input:focus { border-color: #b7d8ca; box-shadow: 0 0 0 3px rgba(183,216,202,.35); }
-    .btn-login {
-      width: 100%; padding: 12px;
-      background: var(--dark); color: #fff;
-      border: 0; border-radius: 11px;
-      font-size: 13px; font-weight: 600;
-      transition: .2s; margin-top: 6px;
-      display: flex; align-items: center; justify-content: center; gap: 8px;
-    }
-    .btn-login:hover { background: #3a3b38; }
-    .btn-login:disabled { opacity: .6; cursor: not-allowed; }
-    .btn-ghost {
-      width: 100%; padding: 11px; margin-top: 10px;
-      background: transparent; color: #686963;
-      border: 1px solid #d8d8d4; border-radius: 11px;
-      font-size: 12px; font-weight: 500; transition: .2s;
-    }
-    .btn-ghost:hover { background: #e8e8e4; }
-    .login-msg {
-      padding: 10px 13px; border-radius: 10px;
-      font-size: 12px; margin-top: 14px; display: none; font-weight: 500;
-    }
-    .login-msg.err { display: block; background: #f4e0e2; color: #a23f4a; border: 1px solid #e8b8bf; }
-    .login-msg.ok  { display: block; background: #dcebe4; color: #3c7a5f; border: 1px solid #b7d8ca; }
-    .login-foot { text-align: center; color: #a4a5a0; font-size: 10px; letter-spacing: 1.2px; margin-top: 22px; }
-
-    /* ============ PAINEL ============ */
-    .app {
-      max-width: 1200px;
-      min-height: calc(100vh - 48px);
-      margin: auto;
-      background: rgba(241,241,238,.78);
-      border: 1px solid rgba(255,255,255,.72);
-      box-shadow: var(--shadow); backdrop-filter: blur(18px);
-      border-radius: 23px;
-      padding: 30px 32px 26px;
-      display: flex; flex-direction: column;
-    }
-    .hidden { display: none !important; }
-
-    .main-top {
-      display: flex; align-items: flex-start; justify-content: space-between;
-      gap: 20px; margin-bottom: 26px; flex-wrap: wrap;
-    }
-    h1,h2,h3,p { margin-top: 0; }
-    h1 { font: 500 27px "Manrope",sans-serif; margin-bottom: 5px; letter-spacing: -.8px; }
-    .subtitle { color: var(--muted); font-size: 13px; margin: 0; }
-    .top-actions { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
-    .icon-button { width: 36px; height: 36px; border: 1px solid #deded9; border-radius: 11px; background: #eeeeeb; color: #666; transition: .2s; }
-    .icon-button:hover { background: #e4e4df; }
-    .date-chip { padding: 9px 12px; border: 1px solid #deded9; border-radius: 10px; color: #777; font-size: 12px; white-space: nowrap; }
-
-    /* user chip */
-    .user-chip {
-      display: flex; align-items: center; gap: 10px;
-      background: #eeeeeb; border: 1px solid #deded9;
-      padding: 5px 5px 5px 12px; border-radius: 100px;
-    }
-    .user-chip .avatar {
-      width: 30px; height: 30px; border-radius: 50%;
-      background: var(--dark); color: #f3f3ef;
-      display: grid; place-items: center;
-      font-size: 11px; font-weight: 700;
-    }
-    .user-chip .uinfo { font-size: 11px; line-height: 1.25; max-width: 160px; overflow: hidden; }
-    .user-chip .uinfo strong { display: block; font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .user-chip .uinfo span { color: #999a96; }
-    .btn-logout {
-      background: transparent; border: 0; color: #686963;
-      padding: 8px 11px; border-radius: 8px; cursor: pointer;
-      font-size: 11px; font-weight: 600; transition: .2s;
-    }
-    .btn-logout:hover { background: #f4e0e2; color: #a23f4a; }
-
-    /* nav */
-    .top-nav {
-      display: flex; gap: 6px; margin-bottom: 24px;
-      border-bottom: 1px solid #deded9;
-      overflow-x: auto; -webkit-overflow-scrolling: touch;
-    }
-    .top-nav .tab-link {
-      border: 0; background: transparent; color: #999a96;
-      padding: 10px 14px; font-size: 13px; font-weight: 500;
-      position: relative; white-space: nowrap; flex-shrink: 0;
-      display: flex; align-items: center; gap: 8px;
-      border-radius: 10px 10px 0 0; transition: .2s;
-    }
-    .top-nav .tab-link:hover { background: #e8e8e4; color: #555651; }
-    .top-nav .tab-link.active { color: #252623; }
-    .top-nav .tab-link.active:after {
-      content: ""; position: absolute; height: 2px; bottom: -1px;
-      left: 8px; right: 8px; background: #7d817b; border-radius: 2px;
-    }
-    .top-nav .tab-link i { font-size: 13px; }
-
-    .view { display: none; animation: fade .25s ease; }
-    .view.active { display: block; }
-    @keyframes fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-
-    .overview { display: grid; grid-template-columns: 1.15fr .85fr; gap: 15px; margin-bottom: 30px; }
-    .metric-card {
-      min-height: 150px; padding: 20px 22px; border-radius: 16px;
-      border: 1px solid #deded9;
-      background: linear-gradient(145deg, #f1f1ee, #e9e9e5);
-      box-shadow: 0 7px 20px #00000008, inset 0 1px #fff;
-    }
-    .metric-title { font-size: 14px; color: #555651; }
-    .metric-value-row { display: flex; align-items: center; gap: 15px; margin: 16px 0 8px; flex-wrap: wrap; }
-    .metric-value { font: 400 56px "Manrope",sans-serif; letter-spacing: -3px; line-height: 1; }
-    .growth { color: #669b85; background: #dcebe4; border-radius: 8px; padding: 7px 9px; font-size: 11px; font-weight: 700; }
-    .metric-foot { color: #9a9b96; font-size: 11px; }
-    .report-link { border: 0; border-top: 1px solid #deded9; background: transparent; width: 100%; text-align: left; padding: 12px 0 0; margin-top: 7px; color: #333; font-size: 12px; }
-    .report-link i { margin-left: 7px; }
-
-    .section-heading { display: flex; justify-content: space-between; align-items: end; gap: 15px; margin-bottom: 18px; flex-wrap: wrap; }
-    h2 { font: 500 23px "Manrope",sans-serif; letter-spacing: -.6px; margin: 0 0 5px; }
-
-    .tabs { display: flex; gap: 22px; border-bottom: 1px solid #deded9; margin-bottom: 15px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    .tab { border: 0; background: transparent; color: #999a96; padding: 0 0 11px; font-size: 13px; position: relative; white-space: nowrap; flex-shrink: 0; }
-    .tab.active { color: #252623; }
-    .tab.active:after { content: ""; position: absolute; height: 2px; bottom: -1px; left: 0; right: 0; background: #7d817b; border-radius: 2px; }
-
-    .table-tools { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
-    .searchbox {
-      display: flex; align-items: center; gap: 10px;
-      border: 1px solid #d8d8d4; border-radius: 11px;
-      padding: 9px 12px; color: #777; background: #ecece9;
-      box-shadow: inset 0 1px 3px #00000008;
-      width: min(320px, 100%);
-    }
-    .searchbox input { min-width: 0; width: 100%; border: 0; outline: 0; background: transparent; color: #333; font-size: 13px; }
-    .filter-btn {
-      border: 1px solid #deded9; border-radius: 10px; background: #eeeeeb;
-      padding: 9px 13px; color: #686963; font-size: 12px; transition: .2s; white-space: nowrap;
-    }
-    .filter-btn:hover { background: #e4e4df; }
-
-    .table-wrap { border: 1px solid #deded9; border-radius: 15px; overflow: hidden; background: #eeeeeb; }
-    .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    th { color: #9b9c97; text-align: left; font-weight: 500; padding: 14px 16px; border-bottom: 1px solid #deded9; white-space: nowrap; }
-    td { padding: 14px 16px; border-bottom: 1px solid #e3e3df; color: #565752; }
-    tr:last-child td { border-bottom: 0; }
-    tbody tr:hover { background: #e8e8e4; }
-    .project-name { display: flex; align-items: center; gap: 10px; color: #33342f; font-weight: 600; }
-    .project-icon { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px; background: #e0e1dc; color: #777a72; flex-shrink: 0; }
-    .status { display: inline-flex; align-items: center; gap: 6px; padding: 5px 8px; border-radius: 20px; background: #e1ebe5; color: #638673; font-size: 10px; white-space: nowrap; }
-    .status:before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: #7aa58e; }
-    .status.review { background: #f0eadc; color: #a18a5b; }
-    .status.review:before { background: #b99e67; }
-    .empty { display: none; text-align: center; padding: 35px; color: #999; font-size: 13px; }
-
-    .toast {
-      position: fixed; bottom: 22px; left: 50%;
-      transform: translateX(-50%) translateY(20px);
-      background: #292a27; color: #fff; padding: 11px 16px;
-      border-radius: 10px; font-size: 12px; opacity: 0;
-      transition: .25s; pointer-events: none;
-      box-shadow: 0 8px 25px #0003; z-index: 99;
-      max-width: calc(100vw - 32px); text-align: center;
-    }
-    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-    .toast.err { background: #7a2e35; }
-
-    .action-btns { display: flex; gap: 6px; justify-content: flex-end; }
-    .act-btn { border: 1px solid #deded9; background: #eeeeeb; color: #666; width: 28px; height: 28px; border-radius: 8px; font-size: 11px; transition: .2s; }
-    .act-btn:hover { background: #e0e1dc; color: #222; }
-    .act-btn.danger:hover { background: #f4d8db; color: #a23f4a; border-color: #e8b8bf; }
-
-    .form-inline { display: grid; grid-template-columns: 1fr 1fr 130px auto; gap: 10px; align-items: end; margin-bottom: 18px; }
-    .field label { display: block; font-size: 11px; color: #999a96; margin-bottom: 5px; text-transform: uppercase; letter-spacing: .06em; }
-    .field input { width: 100%; padding: 10px 12px; background: #ecece9; border: 1px solid #d8d8d4; border-radius: 10px; font-size: 12px; color: #333; outline: none; transition: .2s; }
-    .field input:focus { border-color: #b7d8ca; box-shadow: 0 0 0 3px rgba(183,216,202,.35); }
-    .btn-add { padding: 10px 18px; background: #242523; color: #fff; border: 0; border-radius: 10px; font-size: 12px; font-weight: 600; transition: .2s; white-space: nowrap; }
-    .btn-add:hover { background: #3a3b38; }
-    .btn-add:disabled { opacity: .5; cursor: not-allowed; }
-
-    .report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-    .report-card { background: linear-gradient(145deg, #f1f1ee, #e9e9e5); border: 1px solid #deded9; border-radius: 16px; padding: 22px; }
-    .report-card h3 { font: 500 16px "Manrope",sans-serif; margin: 0 0 8px; }
-    .report-card p { color: #888; font-size: 12px; margin: 0 0 16px; }
-    .report-card .big { font: 400 40px "Manrope",sans-serif; letter-spacing: -2px; margin: 8px 0; }
-    .btn-dark { background: #242523; color: #fff; border: 0; border-radius: 10px; padding: 10px 18px; font-size: 12px; font-weight: 600; transition: .2s; }
-    .btn-dark:hover { background: #3a3b38; }
-
-    .loading-spinner {
-      width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4);
-      border-top-color: #fff; border-radius: 50%; animation: spin .6s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* RESPONSIVO */
-    @media(max-width: 900px) {
-      body { padding: 14px; }
-      .app { padding: 24px 22px; border-radius: 20px; }
-      .overview { grid-template-columns: 1fr; }
-      .form-inline { grid-template-columns: 1fr 1fr; }
-      .form-inline .btn-add { grid-column: 1 / -1; }
-      .report-grid { grid-template-columns: 1fr; }
-    }
-    @media(max-width: 600px) {
-      body { padding: 8px; }
-      .login-wrap { min-height: calc(100vh - 16px); padding: 8px; }
-      .login-card { padding: 30px 24px 24px; border-radius: 20px; }
-      .app { padding: 20px 16px; border-radius: 18px; min-height: calc(100vh - 16px); }
-      h1 { font-size: 22px; }
-      h2 { font-size: 19px; }
-      .main-top { margin-bottom: 20px; }
-      .date-chip { display: none; }
-      .metric-value { font-size: 42px; letter-spacing: -2px; }
-      .metric-card { min-height: auto; padding: 18px; }
-      .overview { margin-bottom: 22px; gap: 12px; }
-      .form-inline { grid-template-columns: 1fr; gap: 8px; }
-      .section-heading { display: block; margin-bottom: 14px; }
-      .section-heading > div > p { margin-bottom: 10px; }
-      .top-nav { gap: 2px; }
-      .top-nav .tab-link { padding: 9px 10px; font-size: 12px; }
-      table { min-width: 540px; }
-      .btn-dark { width: 100%; }
-      .searchbox { width: 100%; }
-      .filter-btn { white-space: nowrap; }
-      .user-chip .uinfo { display: none; }
-    }
-    @media(max-width: 400px) {
-      .app { padding: 16px 12px; }
-      .login-card { padding: 26px 20px 20px; }
-      h1 { font-size: 20px; }
-      .top-nav .tab-link { padding: 8px 8px; font-size: 11px; }
-      .top-nav .tab-link i { display: none; }
-      .metric-value { font-size: 36px; }
-      .report-card .big { font-size: 30px; }
-      .toast { font-size: 11px; padding: 9px 14px; }
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Painel Administrativo — Viagens</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --bg:#0f172a; --panel:#1e293b; --panel-2:#334155; --text:#e2e8f0;
+    --muted:#94a3b8; --primary:#3b82f6; --primary-2:#2563eb;
+    --success:#10b981; --warning:#f59e0b; --danger:#ef4444;
+    --radius:10px; --shadow:0 4px 20px rgba(0,0,0,.25);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+  button{cursor:pointer;font-family:inherit}
+  input,select,textarea{font-family:inherit}
+  #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
+  .login-card{background:var(--panel);padding:2rem;border-radius:var(--radius);box-shadow:var(--shadow);width:100%;max-width:380px}
+  .login-card h1{font-size:1.25rem;margin-bottom:.25rem}
+  .login-card p{color:var(--muted);font-size:.85rem;margin-bottom:1.5rem}
+  .field{margin-bottom:1rem}
+  .field label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:.35rem}
+  .field input,.field select,.field textarea{width:100%;padding:.65rem .75rem;background:var(--panel-2);border:1px solid #475569;border-radius:8px;color:var(--text);font-size:.9rem}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--primary)}
+  .btn{padding:.65rem 1rem;border:none;border-radius:8px;font-weight:600;font-size:.9rem;transition:.15s}
+  .btn-primary{background:var(--primary);color:#fff}
+  .btn-primary:hover{background:var(--primary-2)}
+  .btn-ghost{background:transparent;color:var(--muted);border:1px solid #475569}
+  .btn-ghost:hover{color:var(--text);border-color:var(--muted)}
+  .btn-danger{background:var(--danger);color:#fff}
+  .btn-success{background:var(--success);color:#fff}
+  .btn-sm{padding:.4rem .7rem;font-size:.78rem}
+  .btn-block{width:100%}
+  .error-msg{color:var(--danger);font-size:.8rem;margin-top:.5rem;min-height:1.1rem;word-break:break-word}
+  #app{display:none;min-height:100vh}
+  .layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+  aside{background:var(--panel);border-right:1px solid #334155;padding:1.25rem 0;display:flex;flex-direction:column}
+  .brand{padding:0 1.25rem 1rem;font-weight:700;font-size:1.05rem;border-bottom:1px solid #334155;margin-bottom:.75rem}
+  .brand small{display:block;font-weight:400;font-size:.7rem;color:var(--muted);margin-top:.2rem}
+  nav{display:flex;flex-direction:column;gap:.2rem;padding:0 .5rem;flex:1}
+  .nav-item{display:flex;align-items:center;gap:.6rem;padding:.6rem .75rem;border-radius:8px;color:var(--muted);background:transparent;border:none;text-align:left;font-size:.88rem;width:100%}
+  .nav-item:hover{background:var(--panel-2);color:var(--text)}
+  .nav-item.active{background:var(--primary);color:#fff}
+  .nav-item .icon{width:18px;text-align:center}
+  .user-box{padding:1rem 1.25rem 0;border-top:1px solid #334155;margin-top:.75rem;font-size:.78rem}
+  .user-box .role{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em}
+  .user-box button{margin-top:.6rem;width:100%}
+  main{padding:1.5rem 2rem;overflow:auto}
+  .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem}
+  .page-header h2{font-size:1.35rem}
+  .page-header .sub{color:var(--muted);font-size:.85rem;margin-top:.15rem}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-bottom:2rem}
+  .card{background:var(--panel);border:1px solid #334155;border-radius:var(--radius);padding:1.1rem}
+  .card .label{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .card .value{font-size:1.6rem;font-weight:700;margin-top:.35rem}
+  .card .value.success{color:var(--success)}
+  .card .value.danger{color:var(--danger)}
+  .card .value.warning{color:var(--warning)}
+  .table-wrap{background:var(--panel);border:1px solid #334155;border-radius:var(--radius);overflow:auto}
+  table{width:100%;border-collapse:collapse;font-size:.85rem}
+  th,td{padding:.7rem .9rem;text-align:left;border-bottom:1px solid #334155}
+  th{background:var(--panel-2);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+  tr:last-child td{border-bottom:none}
+  .badge{display:inline-block;padding:.2rem .55rem;border-radius:999px;font-size:.7rem;font-weight:600}
+  .badge.pending{background:#78350f;color:#fcd34d}
+  .badge.confirmed{background:#065f46;color:#6ee7b7}
+  .badge.cancelled{background:#7f1d1d;color:#fca5a5}
+  .badge.paid{background:#065f46;color:#6ee7b7}
+  .badge.published{background:#1e3a8a;color:#93c5fd}
+  .badge.unpublished{background:#374151;color:#9ca3af}
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:1rem;z-index:50}
+  .modal-backdrop.open{display:flex}
+  .modal{background:var(--panel);border-radius:var(--radius);width:100%;max-width:560px;max-height:90vh;overflow:auto;box-shadow:var(--shadow)}
+  .modal-header{padding:1.1rem 1.25rem;border-bottom:1px solid #334155;display:flex;justify-content:space-between;align-items:center}
+  .modal-header h3{font-size:1rem}
+  .modal-body{padding:1.25rem}
+  .modal-footer{padding:1rem 1.25rem;border-top:1px solid #334155;display:flex;justify-content:flex-end;gap:.5rem}
+  .close-x{background:none;border:none;color:var(--muted);font-size:1.3rem;line-height:1}
+  #toast-container{position:fixed;top:1rem;right:1rem;display:flex;flex-direction:column;gap:.5rem;z-index:100}
+  .toast{padding:.75rem 1rem;border-radius:8px;font-size:.85rem;color:#fff;box-shadow:var(--shadow);animation:slide .2s ease}
+  .toast.success{background:var(--success)}
+  .toast.error{background:var(--danger)}
+  .toast.info{background:var(--primary)}
+  @keyframes slide{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+  .empty{text-align:center;padding:2rem;color:var(--muted);font-size:.85rem}
+  .row-actions{display:flex;gap:.35rem;flex-wrap:wrap}
+  .thumb{width:48px;height:32px;object-fit:cover;border-radius:4px}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+  .mobile-menu-btn{display:none;background:var(--panel-2);border:none;color:var(--text);padding:.5rem .7rem;border-radius:8px;margin-right:.5rem}
+  @media(max-width:900px){
+    .layout{grid-template-columns:1fr}
+    aside{position:fixed;left:-260px;top:0;bottom:0;width:240px;z-index:40;transition:.2s}
+    aside.open{left:0}
+    main{padding:1rem}
+    .form-row{grid-template-columns:1fr}
+    .mobile-menu-btn{display:inline-flex}
+  }
+</style>
 </head>
 <body>
 
-  <!-- ============ TELA DE LOGIN ============ -->
-  <div id="v-login" class="login-wrap">
-    <div class="login-card">
-      <div class="login-logo"><i class="fa-solid fa-bolt"></i></div>
-      <h1>Bem-vindo</h1>
-      <p class="sub">Entre para acessar o painel de clientes</p>
-
-      <div id="form-login">
+<div id="login-screen">
+  <div class="login-card">
+    <h1>Painel Administrativo</h1>
+    <p>Acesse com suas credenciais autorizadas.</p>
+    <form id="login-form">
+      <div class="field">
         <label>E-mail</label>
-        <input id="in-email" type="email" placeholder="voce@email.com" autocomplete="username">
+        <input type="email" id="login-email" required autocomplete="username" />
+      </div>
+      <div class="field">
         <label>Senha</label>
-        <input id="in-pass" type="password" placeholder="••••••••" autocomplete="current-password">
-        <button id="btn-login" class="btn-login" onclick="doLogin()">
-          <i class="fa-solid fa-right-to-bracket"></i> Entrar
-        </button>
-        <button class="btn-ghost" onclick="toggleMode()">Criar conta</button>
+        <input type="password" id="login-password" required autocomplete="current-password" />
       </div>
+      <button type="submit" class="btn btn-primary btn-block" id="login-btn">Entrar</button>
+      <div class="error-msg" id="login-error"></div>
+    </form>
+  </div>
+</div>
 
-      <div id="form-signup" class="hidden">
-        <label>E-mail</label>
-        <input id="up-email" type="email" placeholder="voce@email.com" autocomplete="username">
-        <label>Senha (mín. 6 caracteres)</label>
-        <input id="up-pass" type="password" placeholder="••••••••" autocomplete="new-password">
-        <button id="btn-signup" class="btn-login" onclick="doSignup()">
-          <i class="fa-solid fa-user-plus"></i> Criar conta
-        </button>
-        <button class="btn-ghost" onclick="toggleMode()">Já tenho conta</button>
+<div id="app">
+  <div class="layout">
+    <aside id="sidebar">
+      <div class="brand">Painel Viagens<small>Administração</small></div>
+      <nav id="nav"></nav>
+      <div class="user-box">
+        <div id="user-email">—</div>
+        <div class="role" id="user-role">—</div>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">Sair</button>
       </div>
+    </aside>
+    <main>
+      <div class="page-header">
+        <div style="display:flex;align-items:center">
+          <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+          <div>
+            <h2 id="page-title">Dashboard</h2>
+            <div class="sub" id="page-sub">Visão geral</div>
+          </div>
+        </div>
+        <div id="page-actions"></div>
+      </div>
+      <div id="view"></div>
+    </main>
+  </div>
+</div>
 
-      <div id="login-msg" class="login-msg"></div>
-      <div class="login-foot">MS TURISMO· 2026</div>
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="modal-title">—</h3>
+      <button class="close-x" id="modal-close">×</button>
     </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer" id="modal-footer"></div>
   </div>
+</div>
 
-  <!-- ============ PAINEL ============ -->
-  <div id="v-painel" class="app hidden">
-    <header class="main-top">
-      <div>
-        <h1 id="page-title">Dashboard</h1>
-        <p class="subtitle" id="page-sub">Acompanhe seus clientes e métricas em tempo real.</p>
-      </div>
-      <div class="top-actions">
-        <span class="date-chip"><i class="fa-regular fa-calendar"></i> <span id="date-today">—</span></span>
-        <div class="user-chip">
-          <div class="uinfo">
-            <strong id="user-email">—</strong>
-            <span>Administrador</span>
-          </div>
-          <div class="avatar" id="user-avatar">A</div>
-          <button class="btn-logout" onclick="doLogout()">Sair</button>
-        </div>
-      </div>
-    </header>
+<div id="toast-container"></div>
 
-    <nav class="top-nav">
-      <button class="tab-link active" data-view="dashboard"><i class="fa-solid fa-sliders"></i> Dashboard</button>
-      <button class="tab-link" data-view="clientes"><i class="fa-solid fa-user-group"></i> Clientes</button>
-      <button class="tab-link" data-view="relatorios"><i class="fa-solid fa-chart-line"></i> Relatórios</button>
-    </nav>
+<script>
+/* =====================================================================
+   CONFIGURAÇÃO — SUBSTITUA AQUI
+   ===================================================================== */
+const SUPABASE_URL = 'https://xskuytsfwplrqhldwhhe.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhza3V5dHNmd3BscnFobGR3aGhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQzMzg1NjIsImV4cCI6MjEwOTkxNDU2Mn0.yU582BL2vQRriWN4wiQLcQ07KiRjMJAOtnjPEykcwjc';
+const BUCKET_IMAGES = 'trip-images';
 
-    <!-- DASHBOARD -->
-    <section class="view active" id="view-dashboard">
-      <div class="overview">
-        <div class="metric-card">
-          <div class="metric-title">Total de clientes</div>
-          <div class="metric-value-row">
-            <div class="metric-value" id="metric-total">0</div>
-            <span class="growth"><i class="fa-solid fa-arrow-up"></i> <span id="metric-pct">0%</span></span>
-          </div>
-          <div class="metric-foot">Ativos + inativos no banco</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-title">Receita total</div>
-          <div class="metric-value-row">
-            <div class="metric-value" style="font-size:42px;" id="metric-receita">R$ 0,00</div>
-          </div>
-          <button class="report-link" id="reportButton">Baixar relatório PDF <i class="fa-solid fa-arrow-right"></i></button>
-        </div>
-      </div>
+/* =====================================================================
+   PERMISSÕES POR ROLE
+   ===================================================================== */
+const ROLE_PERMISSIONS = {
+  owner:       ['dashboard','trips','reservations','finance','reports','settings','manage_users'],
+  admin:       ['dashboard','trips','reservations','finance','reports','settings'],
+  financeiro:  ['dashboard','finance','reports'],
+  visualizador:['dashboard','trips','reservations','reports'],
+};
 
-      <div class="section-heading">
-        <div><h2>Últimos clientes</h2><p class="subtitle">Os 5 mais recentes cadastrados.</p></div>
-        <button class="filter-btn" data-view="clientes">Ver todos <i class="fa-solid fa-arrow-right"></i></button>
-      </div>
-      <div class="table-wrap">
-        <div class="table-scroll">
-          <table>
-            <thead><tr><th>CLIENTE</th><th>VALOR</th><th>STATUS</th></tr></thead>
-            <tbody id="recentRows"></tbody>
-          </table>
-        </div>
-        <div class="empty" id="recentEmpty">Nenhum cliente cadastrado ainda.</div>
-      </div>
-    </section>
+const MENU = [
+  { key:'dashboard',    label:'Dashboard',      icon:'📊', title:'Dashboard',      sub:'Visão geral' },
+  { key:'trips',        label:'Viagens',        icon:'✈️', title:'Viagens',        sub:'Gerenciar destinos' },
+  { key:'reservations', label:'Reservas',       icon:'📋', title:'Reservas',       sub:'Solicitações de clientes' },
+  { key:'finance',      label:'Financeiro',     icon:'💰', title:'Financeiro',     sub:'Entradas, despesas e saldo' },
+  { key:'reports',      label:'Relatórios',     icon:'📈', title:'Relatórios',     sub:'Consultas e exportações' },
+  { key:'settings',     label:'Configurações',  icon:'⚙️', title:'Configurações',  sub:'Painel e usuários' },
+];
 
-    <!-- CLIENTES -->
-    <section class="view" id="view-clientes">
-      <div class="section-heading">
-        <div><h2>Clientes</h2><p class="subtitle">Adicione, filtre e gerencie seus clientes.</p></div>
-      </div>
+/* =====================================================================
+   [FIX 1] Verifica se o Supabase carregou antes de tudo
+   ===================================================================== */
+if (typeof window.supabase === 'undefined') {
+  document.getElementById('login-error').textContent =
+    'ERRO CRÍTICO: a biblioteca do Supabase não carregou. Verifique sua conexão e recarregue.';
+  document.getElementById('login-btn').disabled = true;
+  throw new Error('Supabase JS não carregado (CDN bloqueado?)');
+}
 
-      <div class="form-inline">
-        <div class="field"><label>Nome</label><input id="novo-nome" placeholder="Nome do cliente"></div>
-        <div class="field"><label>E-mail</label><input id="novo-email" type="email" placeholder="email@exemplo.com"></div>
-        <div class="field"><label>Valor (R$)</label><input id="novo-valor" type="number" step="0.01" placeholder="0,00"></div>
-        <button class="btn-add" id="btn-criar" onclick="criarCliente()"><i class="fa-solid fa-plus"></i> Adicionar</button>
-      </div>
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const state = { user:null, role:null, permissions:[], currentPage:'dashboard', data:{} };
 
-      <div class="tabs">
-        <button class="tab active" data-filter="todos">Todos</button>
-        <button class="tab" data-filter="ativos">Ativos</button>
-        <button class="tab" data-filter="inativos">Inativos</button>
-      </div>
+/* =====================================================================
+   HELPERS
+   ===================================================================== */
+const $ = sel => document.querySelector(sel);
+const fmtBRL = n => Number(n||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const fmtDate = d => d ? new Date(d).toLocaleDateString('pt-BR') : '—';
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-      <div class="table-tools">
-        <label class="searchbox"><i class="fa-solid fa-magnifying-glass"></i><input id="tableSearch" placeholder="Buscar por nome ou e-mail..."></label>
-        <button class="filter-btn" id="filterButton"><i class="fa-solid fa-rotate"></i> Atualizar</button>
-      </div>
+function toast(msg, type='info'){
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  $('#toast-container').appendChild(el);
+  setTimeout(()=>el.remove(), 4000);
+}
+function can(perm){ return state.permissions.includes(perm); }
+function openModal(title, bodyHTML, footerHTML=''){
+  $('#modal-title').textContent = title;
+  $('#modal-body').innerHTML = bodyHTML;
+  $('#modal-footer').innerHTML = footerHTML;
+  $('#modal-backdrop').classList.add('open');
+}
+function closeModal(){ $('#modal-backdrop').classList.remove('open'); }
+$('#modal-close').onclick = closeModal;
+$('#modal-backdrop').addEventListener('click', e=>{ if(e.target.id==='modal-backdrop') closeModal(); });
 
-      <div class="table-wrap">
-        <div class="table-scroll">
-          <table>
-            <thead><tr><th>CLIENTE</th><th>VALOR</th><th>STATUS</th><th style="text-align:right">AÇÕES</th></tr></thead>
-            <tbody id="projectRows"></tbody>
-          </table>
-        </div>
-        <div class="empty" id="emptyState">Nenhum cliente encontrado.</div>
-      </div>
-    </section>
+async function logActivity(action, description){
+  try{
+    await supabase.from('activity_logs').insert({ user_id: state.user.id, action, description });
+  }catch(e){ console.warn('log falhou:', e); }
+}
 
-    <!-- RELATÓRIOS -->
-    <section class="view" id="view-relatorios">
-      <div class="section-heading">
-        <div><h2>Relatórios</h2><p class="subtitle">Exporte e visualize métricas do seu negócio.</p></div>
-      </div>
-      <div class="report-grid">
-        <div class="report-card">
-          <h3>Relatório completo</h3>
-          <p>Todos os clientes com resumo de receita e status.</p>
-          <div class="big" id="rep-total">0</div>
-          <div class="metric-foot" style="margin-bottom:16px;">clientes no total</div>
-          <button class="btn-dark" onclick="exportarPDF()"><i class="fa-solid fa-file-pdf"></i> Baixar PDF</button>
-        </div>
-        <div class="report-card">
-          <h3>Receita ativa</h3>
-          <p>Somatório dos clientes com status ativo.</p>
-          <div class="big" id="rep-receita">R$ 0,00</div>
-          <div class="metric-foot" style="margin-bottom:16px;">receita recorrente</div>
-          <button class="btn-dark" onclick="exportarPDF()"><i class="fa-solid fa-file-pdf"></i> Baixar PDF</button>
-        </div>
-      </div>
-    </section>
-  </div>
+/* =====================================================================
+   [FIX 2] LOGIN com diagnóstico claro em cada etapa
+   ===================================================================== */
+$('#login-form').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const errEl = $('#login-error');
+  const btn = $('#login-btn');
+  errEl.textContent = '';
+  btn.disabled = true;
+  btn.textContent = 'Entrando…';
 
-  <div class="toast" id="toast">Ação realizada.</div>
+  const email = $('#login-email').value.trim();
+  const password = $('#login-password').value;
 
-  <script>
-    // ============================================================
-    // ⚙️ CREDENCIAIS
-    // ============================================================
-    const SUPABASE_URL  = 'https://xskuytsfwplrqhldwhhe.supabase.co';
-    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhza3V5dHNmd3BscnFobGR3aGhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQzMzg1NjIsImV4cCI6MjEwOTkxNDU2Mn0.yU582BL2vQRriWN4wiQLcQ07KiRjMJAOtnjPEykcwjc';
+  try {
+    console.log('[1/3] Autenticando...');
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
 
-    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON, {
-      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
-    });
+    if (authError) {
+      console.error('[1/3] authError:', authError);
+      if (authError.message.includes('Invalid login')) {
+        errEl.textContent = 'E-mail ou senha incorretos.';
+      } else if (authError.message.includes('Email not confirmed')) {
+        errEl.textContent = 'E-mail não confirmado. Confirme em Authentication → Users.';
+      } else {
+        errEl.textContent = 'Erro no login: ' + authError.message;
+      }
+      return;
+    }
+    console.log('[1/3] ok. user id:', authData.user.id);
 
-    const $ = (id) => document.getElementById(id);
-    let todos = [];
-    let filtroAtual = 'todos';
-    let viewAtual = 'dashboard';
+    console.log('[2/3] Buscando role em admin_users...');
+    const { data: adminRow, error: adminError } = await supabase
+      .from('admin_users')
+      .select('role')
+      .eq('user_id', authData.user.id)
+      .maybeSingle();
 
-    const TITULOS = {
-      dashboard: ['Dashboard', 'Acompanhe seus clientes e métricas em tempo real.'],
-      clientes: ['Clientes', 'Adicione, filtre e gerencie seus clientes.'],
-      relatorios: ['Relatórios', 'Exporte e visualize métricas do seu negócio.']
+    if (adminError) {
+      console.error('[2/3] adminError:', adminError);
+      errEl.textContent = 'Erro ao ler admin_users: ' + adminError.message +
+        ' (verifique RLS e se a tabela tem a linha com user_id correto)';
+      await supabase.auth.signOut();
+      return;
+    }
+
+    if (!adminRow) {
+      console.error('[2/3] adminRow vazio. user_id consultado:', authData.user.id);
+      errEl.textContent =
+        'Usuário autenticado, mas NÃO está em admin_users. ' +
+        'Insira: insert into admin_users(user_id,role) values (\'' +
+        authData.user.id + '\',\'owner\');';
+      await supabase.auth.signOut();
+      return;
+    }
+
+    console.log('[2/3] ok. role:', adminRow.role);
+    const perms = ROLE_PERMISSIONS[adminRow.role];
+    if (!perms) {
+      errEl.textContent = 'Role desconhecida: "' + adminRow.role + '". Use owner/admin/financeiro/visualizador.';
+      await supabase.auth.signOut();
+      return;
+    }
+
+    console.log('[3/3] Entrando no painel...');
+    state.user = authData.user;
+    state.role = adminRow.role;
+    state.permissions = perms;
+
+    $('#login-screen').style.display = 'none';
+    $('#app').style.display = 'block';
+    $('#user-email').textContent = authData.user.email;
+    $('#user-role').textContent = adminRow.role;
+
+    renderNav();
+    navigate('dashboard');
+
+  } catch (err) {
+    console.error('Erro inesperado no login:', err);
+    errEl.textContent = 'Erro inesperado: ' + err.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Entrar';
+  }
+});
+
+$('#logout-btn').addEventListener('click', async ()=>{
+  await supabase.auth.signOut();
+  location.reload();
+});
+
+function renderNav(){
+  const nav = $('#nav');
+  nav.innerHTML = '';
+  MENU.forEach(item=>{
+    if(!can(item.key)) return;
+    const btn = document.createElement('button');
+    btn.className = 'nav-item' + (state.currentPage===item.key?' active':'');
+    btn.innerHTML = `<span class="icon">${item.icon}</span> ${item.label}`;
+    btn.onclick = ()=>{ navigate(item.key); $('#sidebar').classList.remove('open'); };
+    nav.appendChild(btn);
+  });
+}
+
+/* =====================================================================
+   [FIX 8] Navegação com fallback de permissão
+   ===================================================================== */
+async function navigate(page){
+  if(!can(page)){
+    toast('Sem permissão para acessar este módulo.','error');
+    page = 'dashboard';
+  }
+  state.currentPage = page;
+  renderNav();
+  const item = MENU.find(m=>m.key===page);
+  $('#page-title').textContent = item.title;
+  $('#page-sub').textContent = item.sub;
+  $('#page-actions').innerHTML = '';
+  $('#view').innerHTML = '<div class="empty">Carregando…</div>';
+
+  try{
+    if(page==='dashboard')    await renderDashboard();
+    if(page==='trips')        await renderTrips();
+    if(page==='reservations') await renderReservations();
+    if(page==='finance')      await renderFinance();
+    if(page==='reports')      await renderReports();
+    if(page==='settings')     await renderSettings();
+  }catch(err){
+    console.error('Erro em', page, err);
+    $('#view').innerHTML = `<div class="empty">Erro ao carregar: ${esc(err.message)}</div>`;
+  }
+}
+
+/* =====================================================================
+   DASHBOARD
+   ===================================================================== */
+async function renderDashboard(){
+  const [resRes, tripRes, txRes] = await Promise.all([
+    supabase.from('reservations').select('id,reservation_status,total_amount,created_at'),
+    supabase.from('destinations').select('id,is_active'),
+    supabase.from('financial_transactions').select('type,amount'),
+  ]);
+  if(resRes.error) console.warn('reservations:', resRes.error);
+  if(tripRes.error) console.warn('destinations:', tripRes.error);
+  if(txRes.error) console.warn('finance:', txRes.error);
+
+  const reservations = resRes.data || [];
+  const trips = tripRes.data || [];
+  const txs = txRes.data || [];
+
+  const pending = reservations.filter(r=>r.reservation_status==='pending').length;
+  const confirmed = reservations.filter(r=>r.reservation_status==='confirmed').length;
+  const activeTrips = trips.filter(t=>t.is_active).length;
+  const entradas = txs.filter(t=>t.type==='entrada').reduce((s,t)=>s+Number(t.amount||0),0);
+  const despesas = txs.filter(t=>t.type==='despesa').reduce((s,t)=>s+Number(t.amount||0),0);
+  const saldo = entradas - despesas;
+
+  $('#view').innerHTML = `
+    <div class="cards">
+      <div class="card"><div class="label">Total de reservas</div><div class="value">${reservations.length}</div></div>
+      <div class="card"><div class="label">Pendentes</div><div class="value warning">${pending}</div></div>
+      <div class="card"><div class="label">Confirmadas</div><div class="value success">${confirmed}</div></div>
+      <div class="card"><div class="label">Viagens ativas</div><div class="value">${activeTrips}</div></div>
+      <div class="card"><div class="label">Entradas</div><div class="value success">${fmtBRL(entradas)}</div></div>
+      <div class="card"><div class="label">Despesas</div><div class="value danger">${fmtBRL(despesas)}</div></div>
+      <div class="card"><div class="label">Saldo</div><div class="value ${saldo>=0?'success':'danger'}">${fmtBRL(saldo)}</div></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Últimas reservas</th><th>Status</th><th>Valor</th><th>Data</th></tr></thead>
+        <tbody>
+          ${reservations.slice(0,5).map(r=>`
+            <tr><td>#${r.id.slice(0,8)}</td><td><span class="badge ${r.reservation_status}">${r.reservation_status}</span></td><td>${fmtBRL(r.total_amount)}</td><td>${fmtDate(r.created_at)}</td></tr>
+          `).join('') || '<tr><td colspan="4" class="empty">Sem reservas ainda.</td></tr>'}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+/* =====================================================================
+   VIAGENS
+   ===================================================================== */
+async function renderTrips(){
+  $('#page-actions').innerHTML = `<button class="btn btn-primary" id="new-trip-btn">+ Nova viagem</button>`;
+  const { data, error } = await supabase.from('destinations').select('*').order('created_at',{ascending:false});
+  if(error) throw error;
+  state.data.trips = data || [];
+
+  $('#view').innerHTML = `
+    <div class="table-wrap"><table>
+      <thead><tr><th>Imagem</th><th>Destino</th><th>Saída</th><th>Retorno</th><th>Preço</th><th>Status</th><th>Ações</th></tr></thead>
+      <tbody>
+        ${state.data.trips.map(t=>`
+          <tr>
+            <td>${t.image_url?`<img class="thumb" src="${esc(t.image_url)}" alt="">`:'—'}</td>
+            <td>${esc(t.name)}</td>
+            <td>${fmtDate(t.departure_date)}</td>
+            <td>${fmtDate(t.return_date)}</td>
+            <td>${fmtBRL(t.price)}</td>
+            <td><span class="badge ${t.is_active?'published':'unpublished'}">${t.is_active?'Publicado':'Não publicado'}</span></td>
+            <td class="row-actions">
+              <button class="btn btn-ghost btn-sm" data-act="edit" data-id="${t.id}">Editar</button>
+              <button class="btn btn-ghost btn-sm" data-act="toggle" data-id="${t.id}">${t.is_active?'Despublicar':'Publicar'}</button>
+              <button class="btn btn-danger btn-sm" data-act="del" data-id="${t.id}">Excluir</button>
+            </td>
+          </tr>`).join('') || '<tr><td colspan="7" class="empty">Nenhuma viagem cadastrada.</td></tr>'}
+      </tbody>
+    </table></div>`;
+
+  $('#new-trip-btn')?.addEventListener('click', ()=> openTripForm());
+  $('#view').querySelectorAll('[data-act]').forEach(btn=>{
+    const id = btn.dataset.id, act = btn.dataset.act;
+    btn.onclick = async ()=>{
+      if(act==='edit') openTripForm(id);
+      if(act==='toggle') await toggleTrip(id);
+      if(act==='del') await deleteTrip(id);
     };
+  });
+}
 
-    function esc(s){
-      return String(s ?? '').replace(/[&<>"']/g, c =>
-        ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function openTripForm(id=null){
+  const trip = id ? state.data.trips.find(t=>t.id===id) : null;
+  openModal(trip?'Editar viagem':'Nova viagem', `
+    <div class="field"><label>Nome do destino</label><input id="f-name" value="${esc(trip?.name||'')}"></div>
+    <div class="field"><label>Descrição</label><textarea id="f-desc" rows="3">${esc(trip?.description||'')}</textarea></div>
+    <div class="form-row">
+      <div class="field"><label>Data de saída</label><input type="date" id="f-dep" value="${trip?.departure_date||''}"></div>
+      <div class="field"><label>Data de retorno</label><input type="date" id="f-ret" value="${trip?.return_date||''}"></div>
+    </div>
+    <div class="field"><label>Preço por pessoa (R$)</label><input type="number" step="0.01" id="f-price" value="${trip?.price||''}"></div>
+    <div class="field"><label>Imagem (${trip?.image_url?'substituir':'enviar'})</label><input type="file" id="f-img" accept="image/*"></div>
+    <div class="error-msg" id="form-error"></div>
+  `, `
+    <button class="btn btn-ghost" id="cancel-form">Cancelar</button>
+    <button class="btn btn-primary" id="save-form">Salvar</button>
+  `);
+  $('#cancel-form').onclick = closeModal;
+  $('#save-form').onclick = ()=> saveTrip(trip?.id||null);
+}
+
+/* [FIX 6] validação de tipo e tamanho da imagem */
+async function saveTrip(id){
+  const errEl = $('#form-error');
+  errEl.textContent = '';
+  const name = $('#f-name').value.trim();
+  const description = $('#f-desc').value.trim();
+  const departure_date = $('#f-dep').value || null;
+  const return_date = $('#f-ret').value || null;
+  const price = parseFloat($('#f-price').value || 0);
+  const file = $('#f-img').files[0];
+
+  if(!name){ errEl.textContent = 'Informe o nome do destino.'; return; }
+  if(!price || price<=0){ errEl.textContent = 'Informe um preço válido.'; return; }
+  if(file){
+    if(!file.type.startsWith('image/')){ errEl.textContent = 'Arquivo precisa ser imagem.'; return; }
+    if(file.size > 5*1024*1024){ errEl.textContent = 'Imagem maior que 5MB.'; return; }
+  }
+
+  let image_url = id ? state.data.trips.find(t=>t.id===id)?.image_url : null;
+  if(file){
+    const path = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g,'')}`;
+    const { error: upErr } = await supabase.storage.from(BUCKET_IMAGES).upload(path, file);
+    if(upErr){ errEl.textContent = 'Erro no upload: '+upErr.message; return; }
+    const { data: pub } = supabase.storage.from(BUCKET_IMAGES).getPublicUrl(path);
+    image_url = pub.publicUrl;
+  }
+
+  const payload = { name, description, departure_date, return_date, price, image_url, updated_at: new Date().toISOString() };
+  let res;
+  if(id){
+    res = await supabase.from('destinations').update(payload).eq('id', id);
+    await logActivity('update_trip', `Viagem ${id} atualizada`);
+  }else{
+    payload.is_active = false;
+    payload.created_at = new Date().toISOString();
+    res = await supabase.from('destinations').insert(payload);
+    await logActivity('create_trip', `Viagem "${name}" criada`);
+  }
+  if(res.error){ errEl.textContent = 'Erro ao salvar: '+res.error.message; return; }
+  closeModal();
+  toast('Viagem salva.','success');
+  renderTrips();
+}
+
+async function toggleTrip(id){
+  const trip = state.data.trips.find(t=>t.id===id);
+  const { error } = await supabase.from('destinations').update({ is_active: !trip.is_active }).eq('id', id);
+  if(error){ toast('Erro: '+error.message,'error'); return; }
+  await logActivity('toggle_trip', `Viagem ${id} ${trip.is_active?'despublicada':'publicada'}`);
+  toast(trip.is_active?'Despublicada.':'Publicada.','success');
+  renderTrips();
+}
+
+/* [FIX 7] mensagem amigável ao excluir viagem com reservas */
+async function deleteTrip(id){
+  if(!confirm('Excluir esta viagem?')) return;
+  const { error } = await supabase.from('destinations').delete().eq('id', id);
+  if(error){
+    if(error.message.includes('foreign key') || error.code === '23503'){
+      toast('Não é possível excluir: há reservas vinculadas a esta viagem.','error');
+    } else {
+      toast('Erro: '+error.message,'error');
     }
+    return;
+  }
+  await logActivity('delete_trip', `Viagem ${id} excluída`);
+  toast('Viagem excluída.','success');
+  renderTrips();
+}
 
-    function toast(message, type='ok'){
-      const el = $('toast');
-      el.textContent = message;
-      el.classList.add('show');
-      if (type === 'err') el.classList.add('err'); else el.classList.remove('err');
-      clearTimeout(window.__toastTimer);
-      window.__toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
-    }
+/* =====================================================================
+   RESERVAS
+   ===================================================================== */
+async function renderReservations(){
+  const { data, error } = await supabase
+    .from('reservations')
+    .select('*, destinations(name)')
+    .order('created_at',{ascending:false});
+  if(error) throw error;
+  state.data.reservations = data || [];
 
-    function setLoginMsg(text, type=''){
-      const el = $('login-msg');
-      el.textContent = text;
-      el.className = 'login-msg' + (type ? ' ' + type : '');
-    }
+  $('#view').innerHTML = `
+    <div class="table-wrap"><table>
+      <thead><tr><th>Cliente</th><th>Telefone</th><th>Viagem</th><th>Pax</th><th>Valor</th><th>Status</th><th>Data</th><th>Ações</th></tr></thead>
+      <tbody>
+        ${state.data.reservations.map(r=>`
+          <tr>
+            <td>${esc(r.customer_name)}</td>
+            <td>${esc(r.phone||'—')}</td>
+            <td>${esc(r.destinations?.name||'—')}</td>
+            <td>${r.passengers}</td>
+            <td>${fmtBRL(r.total_amount)}</td>
+            <td><span class="badge ${r.reservation_status}">${r.reservation_status}</span></td>
+            <td>${fmtDate(r.created_at)}</td>
+            <td class="row-actions">
+              <button class="btn btn-ghost btn-sm" data-act="status" data-id="${r.id}">Status</button>
+              <button class="btn btn-ghost btn-sm" data-act="whats" data-id="${r.id}">WhatsApp</button>
+              <button class="btn btn-danger btn-sm" data-act="del" data-id="${r.id}">Excluir</button>
+            </td>
+          </tr>`).join('') || '<tr><td colspan="8" class="empty">Sem reservas.</td></tr>'}
+      </tbody>
+    </table></div>`;
 
-    // ============================================================
-    // LOGIN / CADASTRO
-    // ============================================================
-    function toggleMode(){
-      $('form-login').classList.toggle('hidden');
-      $('form-signup').classList.toggle('hidden');
-      setLoginMsg('');
-    }
+  $('#view').querySelectorAll('[data-act]').forEach(btn=>{
+    const id = btn.dataset.id, act = btn.dataset.act;
+    btn.onclick = ()=>{
+      if(act==='status') changeReservationStatus(id);
+      if(act==='whats') openWhatsApp(id);
+      if(act==='del') deleteReservation(id);
+    };
+  });
+}
 
-    async function doLogin(){
-      const email = $('in-email').value.trim();
-      const password = $('in-pass').value;
-      if (!email || !password) return setLoginMsg('Preencha e-mail e senha.', 'err');
+function changeReservationStatus(id){
+  const r = state.data.reservations.find(x=>x.id===id);
+  openModal('Alterar status', `
+    <div class="field"><label>Status</label>
+      <select id="f-status">
+        <option value="pending" ${r.reservation_status==='pending'?'selected':''}>Pendente</option>
+        <option value="confirmed" ${r.reservation_status==='confirmed'?'selected':''}>Confirmada</option>
+        <option value="cancelled" ${r.reservation_status==='cancelled'?'selected':''}>Cancelada</option>
+      </select>
+    </div>
+  `, `
+    <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
+    <button class="btn btn-primary" id="save-status">Salvar</button>
+  `);
+  $('#save-status').onclick = async ()=>{
+    const status = $('#f-status').value;
+    const { error } = await supabase.from('reservations').update({ reservation_status: status }).eq('id', id);
+    if(error){ toast('Erro: '+error.message,'error'); return; }
+    await logActivity('update_reservation_status', `Reserva ${id} → ${status}`);
+    closeModal();
+    toast('Status atualizado.','success');
+    renderReservations();
+  };
+}
 
-      const btn = $('btn-login');
-      btn.disabled = true;
-      btn.innerHTML = '<span class="loading-spinner"></span> Entrando...';
+function openWhatsApp(id){
+  const r = state.data.reservations.find(x=>x.id===id);
+  const phone = (r.phone||'').replace(/\D/g,'');
+  if(!phone){ toast('Cliente sem telefone cadastrado.','error'); return; }
+  const msg = encodeURIComponent(`Olá ${r.customer_name}, sobre sua reserva #${r.id.slice(0,8)} para ${r.destinations?.name||'a viagem'}.`);
+  window.open(`https://wa.me/55${phone}?text=${msg}`,'_blank');
+}
 
-      const { error } = await sb.auth.signInWithPassword({ email, password });
+async function deleteReservation(id){
+  if(!confirm('Excluir esta reserva?')) return;
+  const { error } = await supabase.from('reservations').delete().eq('id', id);
+  if(error){ toast('Erro: '+error.message,'error'); return; }
+  await logActivity('delete_reservation', `Reserva ${id} excluída`);
+  toast('Reserva excluída.','success');
+  renderReservations();
+}
 
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i> Entrar';
+/* =====================================================================
+   FINANCEIRO
+   ===================================================================== */
+async function renderFinance(){
+  $('#page-actions').innerHTML = `<button class="btn btn-primary" id="new-tx-btn">+ Lançamento</button>`;
+  const [txRes, tripRes] = await Promise.all([
+    supabase.from('financial_transactions').select('*, destinations(name)').order('transaction_date',{ascending:false}),
+    supabase.from('destinations').select('id,name').order('name'),
+  ]);
+  if(txRes.error) throw txRes.error;
+  const txs = txRes.data || [];
+  state.data.transactions = txs;
+  state.data.tripList = tripRes.data || [];
 
-      if (error){
-        if (error.message.toLowerCase().includes('invalid'))
-          return setLoginMsg('E-mail ou senha incorretos.', 'err');
-        return setLoginMsg(error.message, 'err');
-      }
-      setLoginMsg('');
-      await entrarNoPainel();
-    }
+  const entradas = txs.filter(t=>t.type==='entrada').reduce((s,t)=>s+Number(t.amount||0),0);
+  const despesas = txs.filter(t=>t.type==='despesa').reduce((s,t)=>s+Number(t.amount||0),0);
 
-    async function doSignup(){
-      const email = $('up-email').value.trim();
-      const password = $('up-pass').value;
-      if (!email || password.length < 6)
-        return setLoginMsg('E-mail válido e senha com 6+ caracteres.', 'err');
+  $('#view').innerHTML = `
+    <div class="cards">
+      <div class="card"><div class="label">Entradas</div><div class="value success">${fmtBRL(entradas)}</div></div>
+      <div class="card"><div class="label">Despesas</div><div class="value danger">${fmtBRL(despesas)}</div></div>
+      <div class="card"><div class="label">Saldo</div><div class="value ${entradas-despesas>=0?'success':'danger'}">${fmtBRL(entradas-despesas)}</div></div>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Viagem</th><th>Valor</th><th>Ações</th></tr></thead>
+      <tbody>
+        ${txs.map(t=>`
+          <tr>
+            <td>${fmtDate(t.transaction_date)}</td>
+            <td><span class="badge ${t.type==='entrada'?'confirmed':'cancelled'}">${t.type}</span></td>
+            <td>${esc(t.description)}</td>
+            <td>${esc(t.destinations?.name||'—')}</td>
+            <td>${fmtBRL(t.amount)}</td>
+            <td><button class="btn btn-danger btn-sm" data-act="del-tx" data-id="${t.id}">Excluir</button></td>
+          </tr>`).join('') || '<tr><td colspan="6" class="empty">Sem lançamentos.</td></tr>'}
+      </tbody>
+    </table></div>`;
 
-      const btn = $('btn-signup');
-      btn.disabled = true;
-      btn.innerHTML = '<span class="loading-spinner"></span> Criando...';
+  $('#new-tx-btn')?.addEventListener('click', openTxForm);
+  $('#view').querySelectorAll('[data-act="del-tx"]').forEach(btn=>{
+    btn.onclick = ()=> deleteTx(btn.dataset.id);
+  });
+}
 
-      const { data, error } = await sb.auth.signUp({ email, password });
+function openTxForm(){
+  openModal('Novo lançamento', `
+    <div class="field"><label>Tipo</label>
+      <select id="tx-type"><option value="entrada">Entrada</option><option value="despesa">Despesa</option></select>
+    </div>
+    <div class="field"><label>Descrição</label><input id="tx-desc"></div>
+    <div class="field"><label>Valor (R$)</label><input type="number" step="0.01" id="tx-amount"></div>
+    <div class="field"><label>Data</label><input type="date" id="tx-date" value="${new Date().toISOString().slice(0,10)}"></div>
+    <div class="field"><label>Viagem (opcional)</label>
+      <select id="tx-trip"><option value="">—</option>${state.data.tripList.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select>
+    </div>
+    <div class="error-msg" id="tx-error"></div>
+  `, `
+    <button class="btn btn-ghost" id="tx-cancel">Cancelar</button>
+    <button class="btn btn-primary" id="tx-save">Salvar</button>
+  `);
+  $('#tx-cancel').onclick = closeModal;
+  $('#tx-save').onclick = async ()=>{
+    const type = $('#tx-type').value;
+    const description = $('#tx-desc').value.trim();
+    const amount = parseFloat($('#tx-amount').value||0);
+    const transaction_date = $('#tx-date').value;
+    const destination_id = $('#tx-trip').value || null;
+    if(!description || amount<=0 || !transaction_date){ $('#tx-error').textContent='Preencha todos os campos.'; return; }
+    const { error } = await supabase.from('financial_transactions').insert({ type, description, amount, transaction_date, destination_id });
+    if(error){ $('#tx-error').textContent = error.message; return; }
+    await logActivity('create_tx', `${type} ${fmtBRL(amount)} — ${description}`);
+    closeModal();
+    toast('Lançamento registrado.','success');
+    renderFinance();
+  };
+}
 
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-user-plus"></i> Criar conta';
+async function deleteTx(id){
+  if(!confirm('Excluir este lançamento?')) return;
+  const { error } = await supabase.from('financial_transactions').delete().eq('id', id);
+  if(error){ toast('Erro: '+error.message,'error'); return; }
+  await logActivity('delete_tx', `Lançamento ${id} excluído`);
+  toast('Lançamento excluído.','success');
+  renderFinance();
+}
 
-      if (error){
-        if (error.message.toLowerCase().includes('already'))
-          return setLoginMsg('Este e-mail já está cadastrado.', 'err');
-        return setLoginMsg(error.message, 'err');
-      }
+/* =====================================================================
+   RELATÓRIOS
+   ===================================================================== */
+async function renderReports(){
+  const [txRes, tripRes] = await Promise.all([
+    supabase.from('financial_transactions').select('*, destinations(name)').order('transaction_date',{ascending:false}),
+    supabase.from('destinations').select('id,name').order('name'),
+  ]);
+  if(txRes.error) throw txRes.error;
+  const txs = txRes.data || [];
+  const trips = tripRes.data || [];
+  state.data.transactions = txs;
+  state.data.tripList = trips;
 
-      if (data.session){
-        setLoginMsg('Conta criada! Entrando...', 'ok');
-        return entrarNoPainel();
-      }
-      setLoginMsg('Conta criada! Verifique seu e-mail para confirmar.', 'ok');
-      toggleMode();
-    }
+  $('#view').innerHTML = `
+    <div class="cards" style="grid-template-columns:1fr 1fr 1fr">
+      <div class="field"><label>De</label><input type="date" id="rep-from"></div>
+      <div class="field"><label>Até</label><input type="date" id="rep-to"></div>
+      <div class="field"><label>Viagem</label>
+        <select id="rep-trip"><option value="">Todas</option>${trips.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select>
+      </div>
+    </div>
+    <div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap">
+      <button class="btn btn-primary btn-sm" id="rep-filter">Filtrar</button>
+      <button class="btn btn-ghost btn-sm" id="rep-csv">Exportar CSV</button>
+      <button class="btn btn-ghost btn-sm" id="rep-pdf">Gerar PDF</button>
+    </div>
+    <div id="rep-results"></div>`;
 
-    async function doLogout(){
-      await sb.auth.signOut();
-      $('in-email').value = '';
-      $('in-pass').value = '';
-      $('up-email').value = '';
-      $('up-pass').value = '';
-      setLoginMsg('');
-      mostrarLogin();
-    }
+  const renderResults = (filtered)=>{
+    const entradas = filtered.filter(t=>t.type==='entrada').reduce((s,t)=>s+Number(t.amount||0),0);
+    const despesas = filtered.filter(t=>t.type==='despesa').reduce((s,t)=>s+Number(t.amount||0),0);
+    $('#rep-results').innerHTML = `
+      <div class="cards">
+        <div class="card"><div class="label">Entradas</div><div class="value success">${fmtBRL(entradas)}</div></div>
+        <div class="card"><div class="label">Despesas</div><div class="value danger">${fmtBRL(despesas)}</div></div>
+        <div class="card"><div class="label">Saldo</div><div class="value">${fmtBRL(entradas-despesas)}</div></div>
+        <div class="card"><div class="label">Lançamentos</div><div class="value">${filtered.length}</div></div>
+      </div>
+      <div class="table-wrap"><table>
+        <thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Viagem</th><th>Valor</th></tr></thead>
+        <tbody>${filtered.map(t=>`<tr><td>${fmtDate(t.transaction_date)}</td><td>${t.type}</td><td>${esc(t.description)}</td><td>${esc(t.destinations?.name||'—')}</td><td>${fmtBRL(t.amount)}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">Sem dados.</td></tr>'}</tbody>
+      </table></div>`;
+  };
 
-    // ============================================================
-    // Alternância Login ↔ Painel
-    // ============================================================
-    function mostrarLogin(){
-      $('v-login').classList.remove('hidden');
-      $('v-painel').classList.add('hidden');
-    }
+  let current = [...txs];
+  renderResults(current);
 
-    async function entrarNoPainel(){
-      const { data: { user } } = await sb.auth.getUser();
-      if (!user) return mostrarLogin();
-
-      $('user-email').textContent = user.email;
-      $('user-avatar').textContent = (user.email[0] || 'A').toUpperCase();
-
-      $('v-login').classList.add('hidden');
-      $('v-painel').classList.remove('hidden');
-
-      await carregar();
-      abrirView('dashboard');
-    }
-
-    // ============================================================
-    // Navegação de views
-    // ============================================================
-    function abrirView(name){
-      viewAtual = name;
-      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-      const el = $('view-' + name);
-      if (el) el.classList.add('active');
-
-      const [t, s] = TITULOS[name] || ['Dashboard',''];
-      $('page-title').textContent = t;
-      $('page-sub').textContent = s;
-
-      document.querySelectorAll('.top-nav .tab-link').forEach(n => {
-        n.classList.toggle('active', n.dataset.view === name);
-      });
-
-      renderTodas();
-    }
-
-    // ============================================================
-    // Carregar
-    // ============================================================
-    async function carregar(){
-      const { data, error } = await sb
-        .from('clientes')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error){
-        toast('Erro: ' + error.message, 'err');
-        return;
-      }
-      todos = data || [];
-      atualizarStats();
-      renderTodas();
-    }
-
-    function atualizarStats(){
-      const total = todos.length;
-      const ativos = todos.filter(c => c.ativo).length;
-      const receita = todos.filter(c => c.ativo).reduce((s,c) => s + Number(c.valor||0), 0);
-
-      $('metric-total').textContent = total;
-      $('metric-receita').textContent = 'R$ ' + receita.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-      $('metric-pct').textContent = total ? Math.round((ativos/total)*100) + '%' : '0%';
-      $('rep-total').textContent = total;
-      $('rep-receita').textContent = 'R$ ' + receita.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
-    }
-
-    // ============================================================
-    // Renderização
-    // ============================================================
-    function linhaCliente(c, acoes){
-      return `
-        <tr>
-          <td>
-            <div class="project-name">
-              <span class="project-icon"><i class="fa-solid fa-user"></i></span>
-              <div>
-                <div>${esc(c.nome)}</div>
-                <div style="font-size:10px;color:#999a96;font-weight:400">${esc(c.email)}</div>
-              </div>
-            </div>
-          </td>
-          <td>R$ ${Number(c.valor||0).toFixed(2)}</td>
-          <td><span class="status ${c.ativo ? '' : 'review'}">${c.ativo ? 'Ativo' : 'Inativo'}</span></td>
-          ${acoes ? `<td>
-            <div class="action-btns">
-              <button class="act-btn" title="${c.ativo ? 'Desativar' : 'Ativar'}" onclick="toggleAtivo('${c.id}', ${!c.ativo})">
-                <i class="fa-solid fa-${c.ativo ? 'pause' : 'play'}"></i>
-              </button>
-              <button class="act-btn danger" title="Excluir" onclick="excluir('${c.id}')">
-                <i class="fa-solid fa-trash"></i>
-              </button>
-            </div>
-          </td>` : ''}
-        </tr>
-      `;
-    }
-
-    function renderDashboard(){
-      const recentes = todos.slice(0, 5);
-      $('recentEmpty').style.display = recentes.length ? 'none' : 'block';
-      $('recentRows').innerHTML = recentes.map(c => linhaCliente(c, false)).join('');
-    }
-
-    function renderClientes(){
-      const termo = ($('tableSearch').value || '').toLowerCase().trim();
-      let lista = todos;
-      if (filtroAtual === 'ativos') lista = lista.filter(c => c.ativo);
-      if (filtroAtual === 'inativos') lista = lista.filter(c => !c.ativo);
-      if (termo) lista = lista.filter(c =>
-        (c.nome||'').toLowerCase().includes(termo) ||
-        (c.email||'').toLowerCase().includes(termo));
-
-      if (lista.length === 0){
-        $('projectRows').innerHTML = '';
-        $('emptyState').style.display = 'block';
-        $('emptyState').textContent = termo || filtroAtual !== 'todos'
-          ? 'Nenhum cliente encontrado para este filtro.'
-          : 'Nenhum cliente cadastrado ainda.';
-        return;
-      }
-      $('emptyState').style.display = 'none';
-      $('projectRows').innerHTML = lista.map(c => linhaCliente(c, true)).join('');
-    }
-
-    function renderTodas(){
-      renderDashboard();
-      renderClientes();
-    }
-
-    // ============================================================
-    // CRUD
-    // ============================================================
-    async function criarCliente(){
-      const nome = $('novo-nome').value.trim();
-      const email = $('novo-email').value.trim();
-      const valor = parseFloat($('novo-valor').value) || 0;
-      if (!nome || !email) return toast('Preencha nome e e-mail.', 'err');
-
-      const btn = $('btn-criar');
-      btn.disabled = true;
-      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-
-      const { error } = await sb.from('clientes').insert({ nome, email, valor, ativo: true });
-      btn.disabled = false;
-      btn.innerHTML = '<i class="fa-solid fa-plus"></i> Adicionar';
-
-      if (error) return toast('Erro: ' + error.message, 'err');
-      $('novo-nome').value = $('novo-email').value = $('novo-valor').value = '';
-      toast('Cliente adicionado!');
-      await carregar();
-    }
-
-    async function toggleAtivo(id, ativo){
-      const { error } = await sb.from('clientes').update({ ativo }).eq('id', id);
-      if (error) return toast(error.message, 'err');
-      await carregar();
-    }
-
-    async function excluir(id){
-      if (!confirm('Excluir este cliente?\nEsta ação não pode ser desfeita.')) return;
-      const { error } = await sb.from('clientes').delete().eq('id', id);
-      if (error) return toast(error.message, 'err');
-      toast('Cliente excluído.');
-      await carregar();
-    }
-
-    // ============================================================
-    // PDF
-    // ============================================================
-    function exportarPDF(){
-      if (todos.length === 0) return toast('Nenhum cliente para exportar.', 'err');
-
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-
-      const total = todos.length;
-      const ativos = todos.filter(c => c.ativo).length;
-      const inativos = total - ativos;
-      const receita = todos.filter(c => c.ativo).reduce((s,c) => s + Number(c.valor||0), 0);
-
-      doc.setFillColor(36,37,35);
-      doc.rect(0, 0, 210, 30, 'F');
-      doc.setTextColor(255,255,255);
-      doc.setFont('helvetica','bold');
-      doc.setFontSize(18);
-      doc.text('Relatório de Clientes', 14, 15);
-      doc.setFont('helvetica','normal');
-      doc.setFontSize(9);
-      doc.text('Gerado em ' + new Date().toLocaleString('pt-BR'), 14, 23);
-
-      doc.setTextColor(40,40,40);
-      doc.setFontSize(11);
-      doc.setFont('helvetica','bold');
-      doc.text('Resumo', 14, 42);
-
-      doc.setFont('helvetica','normal');
-      doc.setFontSize(10);
-      doc.text(`Total de clientes: ${total}`, 14, 50);
-      doc.text(`Ativos: ${ativos}`, 14, 56);
-      doc.text(`Inativos: ${inativos}`, 14, 62);
-      doc.text(`Receita total (ativos): R$ ${receita.toLocaleString('pt-BR',{minimumFractionDigits:2})}`, 14, 68);
-
-      doc.autoTable({
-        startY: 76,
-        head: [['Nome','E-mail','Valor','Status']],
-        body: todos.map(c => [c.nome||'—', c.email||'—', 'R$ '+Number(c.valor||0).toFixed(2), c.ativo?'Ativo':'Inativo']),
-        theme: 'grid',
-        styles: { fontSize: 9, cellPadding: 3, textColor: [40,40,40] },
-        headStyles: { fillColor: [36,37,35], textColor: 255, fontStyle: 'bold' },
-        alternateRowStyles: { fillColor: [245,247,242] },
-        columnStyles: {
-          0:{cellWidth:55}, 1:{cellWidth:70},
-          2:{cellWidth:35,halign:'right'}, 3:{cellWidth:25,halign:'center'}
-        }
-      });
-
-      const finalY = doc.lastAutoTable.finalY + 10;
-      doc.setFontSize(8);
-      doc.setTextColor(150,150,150);
-      doc.text('Workspace · Painel de Clientes', 14, finalY);
-
-      doc.save(`relatorio-clientes-${new Date().toISOString().slice(0,10)}.pdf`);
-      toast('Relatório PDF gerado!');
-    }
-
-    // ============================================================
-    // Eventos
-    // ============================================================
-    document.querySelectorAll('.top-nav .tab-link').forEach(btn => {
-      btn.addEventListener('click', () => abrirView(btn.dataset.view));
+  $('#rep-filter').onclick = ()=>{
+    const from = $('#rep-from').value, to = $('#rep-to').value, trip = $('#rep-trip').value;
+    current = txs.filter(t=>{
+      if(from && t.transaction_date < from) return false;
+      if(to && t.transaction_date > to) return false;
+      if(trip && String(t.destination_id)!==trip) return false;
+      return true;
     });
+    renderResults(current);
+  };
 
-    document.querySelectorAll('[data-view]').forEach(el => {
-      if (el.classList.contains('tab-link')) return;
-      el.addEventListener('click', () => abrirView(el.dataset.view));
-    });
+  $('#rep-csv').onclick = ()=>{
+    const rows = [['Data','Tipo','Descrição','Viagem','Valor']];
+    current.forEach(t=>rows.push([t.transaction_date,t.type,t.description,t.destinations?.name||'',t.amount]));
+    const csv = rows.map(r=>r.map(c=>`"${String(c??'').replace(/"/g,'""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `relatorio-${Date.now()}.csv`;
+    a.click();
+  };
 
-    $('tableSearch').addEventListener('input', renderClientes);
-    $('filterButton').addEventListener('click', () => carregar());
-    $('reportButton').addEventListener('click', exportarPDF);
+  $('#rep-pdf').onclick = ()=>{
+    const w = window.open('','_blank');
+    if(!w){ toast('Popup bloqueado. Permita popups.','error'); return; }
+    w.document.write(`<html><head><title>Relatório</title><style>body{font-family:sans-serif;padding:2rem}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:.4rem;font-size:.85rem}th{background:#eee}</style></head><body>
+      <h2>Relatório Financeiro</h2><p>Gerado em ${new Date().toLocaleString('pt-BR')}</p>
+      <table><thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Viagem</th><th>Valor</th></tr></thead>
+      <tbody>${current.map(t=>`<tr><td>${fmtDate(t.transaction_date)}</td><td>${t.type}</td><td>${esc(t.description)}</td><td>${esc(t.destinations?.name||'')}</td><td>${fmtBRL(t.amount)}</td></tr>`).join('')}</tbody></table>
+      </body></html>`);
+    w.document.close();
+    w.print();
+  };
+}
 
-    document.querySelectorAll('.tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        tab.classList.add('active');
-        filtroAtual = tab.dataset.filter;
-        renderClientes();
-      });
-    });
+/* =====================================================================
+   CONFIGURAÇÕES
+   ===================================================================== */
+async function renderSettings(){
+  const { data, error } = await supabase.from('admin_users').select('id,user_id,role,created_at');
+  if(error) throw error;
+  state.data.admins = data || [];
 
-    document.addEventListener('keydown', e => {
-      if (e.key === 'Enter'){
-        const a = document.activeElement?.id;
-        if (['in-email','in-pass'].includes(a)) doLogin();
-        if (['up-email','up-pass'].includes(a)) doSignup();
-        if (['novo-nome','novo-email','novo-valor'].includes(a)) criarCliente();
-      }
-    });
+  $('#view').innerHTML = `
+    <div class="cards">
+      <div class="card"><div class="label">Seu papel</div><div class="value" style="font-size:1.1rem">${state.role}</div></div>
+      <div class="card"><div class="label">Permissões</div><div class="value" style="font-size:.85rem;font-weight:400">${state.permissions.join(', ')}</div></div>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>User ID</th><th>Papel</th><th>Criado em</th>${can('manage_users')?'<th>Ações</th>':''}</tr></thead>
+      <tbody>
+        ${state.data.admins.map(a=>`
+          <tr>
+            <td style="font-family:monospace;font-size:.75rem">${esc(a.user_id)}</td>
+            <td>${esc(a.role)}</td>
+            <td>${fmtDate(a.created_at)}</td>
+            ${can('manage_users')?`<td><button class="btn btn-danger btn-sm" data-del-admin="${a.id}">Remover</button></td>`:''}
+          </tr>`).join('') || '<tr><td colspan="4" class="empty">Nenhum admin.</td></tr>'}
+      </tbody>
+    </table></div>
+    <p style="margin-top:1rem;color:var(--muted);font-size:.8rem">Para adicionar admin: crie em Authentication → Users, depois <code>insert into admin_users(user_id,role) values ('&lt;uuid&gt;','owner');</code></p>`;
 
-    $('date-today').textContent = new Date().toLocaleDateString('pt-BR', { day:'2-digit', month:'short', year:'numeric' });
+  $('#view').querySelectorAll('[data-del-admin]').forEach(btn=>{
+    btn.onclick = async ()=>{
+      if(!confirm('Remover este administrador?')) return;
+      const { error } = await supabase.from('admin_users').delete().eq('id', btn.dataset.delAdmin);
+      if(error){ toast('Erro: '+error.message,'error'); return; }
+      await logActivity('remove_admin', 'Administrador removido');
+      toast('Admin removido.','success');
+      renderSettings();
+    };
+  });
+}
 
-    // ============================================================
-    // Boot — verifica sessão
-    // ============================================================
-    (async () => {
-      const { data: { session } } = await sb.auth.getSession();
-      if (session) await entrarNoPainel();
-      else mostrarLogin();
-    })();
-  </script>
+/* =====================================================================
+   [FIX 4] BOOT — usa getUser() (valida no servidor), não getSession()
+   ===================================================================== */
+(async ()=>{
+  try {
+    const { data:{ user }, error } = await supabase.auth.getUser();
+    if(error || !user) return; // sem sessão válida → mostra login
+
+    const { data: adminRow, error: adminError } = await supabase
+      .from('admin_users').select('role').eq('user_id', user.id).maybeSingle();
+
+    if(adminError || !adminRow) return; // deixa a tela de login aparecer
+
+    const perms = ROLE_PERMISSIONS[adminRow.role];
+    if(!perms) return;
+
+    state.user = user;
+    state.role = adminRow.role;
+    state.permissions = perms;
+
+    $('#login-screen').style.display = 'none';
+    $('#app').style.display = 'block';
+    $('#user-email').textContent = user.email;
+    $('#user-role').textContent = adminRow.role;
+    renderNav();
+    navigate('dashboard');
+  } catch (err) {
+    console.warn('boot:', err);
+  }
+})();
+
+$('#mobile-menu-btn').onclick = ()=> $('#sidebar').classList.toggle('open');
+
+// [FIX] closeModal exposto ao escopo global para o onclick inline funcionar
+window.closeModal = closeModal;
+</script>
 </body>
 </html>
