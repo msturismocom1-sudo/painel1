@@ -162,7 +162,7 @@
 
 <script>
 /* =====================================================================
-   CONFIGURAÇÃO — SUBSTITUA AQUI
+   CONFIGURAÇÃO
    ===================================================================== */
 const SUPABASE_URL = 'https://xskuytsfwplrqhldwhhe.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhza3V5dHNmd3BscnFobGR3aGhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQzMzg1NjIsImV4cCI6MjEwOTkxNDU2Mn0.yU582BL2vQRriWN4wiQLcQ07KiRjMJAOtnjPEykcwjc';
@@ -188,16 +188,11 @@ const MENU = [
 ];
 
 /* =====================================================================
-   [FIX 1] Verifica se o Supabase carregou antes de tudo
+   [CORREÇÃO CRÍTICA] Variável renomeada para 'sb'
+   O CDN do Supabase declara window.supabase. Declarar 'const supabase'
+   no escopo global causa: Identifier 'supabase' has already been declared.
    ===================================================================== */
-if (typeof window.supabase === 'undefined') {
-  document.getElementById('login-error').textContent =
-    'ERRO CRÍTICO: a biblioteca do Supabase não carregou. Verifique sua conexão e recarregue.';
-  document.getElementById('login-btn').disabled = true;
-  throw new Error('Supabase JS não carregado (CDN bloqueado?)');
-}
-
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const state = { user:null, role:null, permissions:[], currentPage:'dashboard', data:{} };
 
 /* =====================================================================
@@ -223,17 +218,19 @@ function openModal(title, bodyHTML, footerHTML=''){
   $('#modal-backdrop').classList.add('open');
 }
 function closeModal(){ $('#modal-backdrop').classList.remove('open'); }
+window.closeModal = closeModal;
+
 $('#modal-close').onclick = closeModal;
 $('#modal-backdrop').addEventListener('click', e=>{ if(e.target.id==='modal-backdrop') closeModal(); });
 
 async function logActivity(action, description){
   try{
-    await supabase.from('activity_logs').insert({ user_id: state.user.id, action, description });
+    await sb.from('activity_logs').insert({ user_id: state.user.id, action, description });
   }catch(e){ console.warn('log falhou:', e); }
 }
 
 /* =====================================================================
-   [FIX 2] LOGIN com diagnóstico claro em cada etapa
+   LOGIN
    ===================================================================== */
 $('#login-form').addEventListener('submit', async e=>{
   e.preventDefault();
@@ -248,7 +245,7 @@ $('#login-form').addEventListener('submit', async e=>{
 
   try {
     console.log('[1/3] Autenticando...');
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    const { data: authData, error: authError } = await sb.auth.signInWithPassword({ email, password });
 
     if (authError) {
       console.error('[1/3] authError:', authError);
@@ -264,7 +261,7 @@ $('#login-form').addEventListener('submit', async e=>{
     console.log('[1/3] ok. user id:', authData.user.id);
 
     console.log('[2/3] Buscando role em admin_users...');
-    const { data: adminRow, error: adminError } = await supabase
+    const { data: adminRow, error: adminError } = await sb
       .from('admin_users')
       .select('role')
       .eq('user_id', authData.user.id)
@@ -274,7 +271,7 @@ $('#login-form').addEventListener('submit', async e=>{
       console.error('[2/3] adminError:', adminError);
       errEl.textContent = 'Erro ao ler admin_users: ' + adminError.message +
         ' (verifique RLS e se a tabela tem a linha com user_id correto)';
-      await supabase.auth.signOut();
+      await sb.auth.signOut();
       return;
     }
 
@@ -284,7 +281,7 @@ $('#login-form').addEventListener('submit', async e=>{
         'Usuário autenticado, mas NÃO está em admin_users. ' +
         'Insira: insert into admin_users(user_id,role) values (\'' +
         authData.user.id + '\',\'owner\');';
-      await supabase.auth.signOut();
+      await sb.auth.signOut();
       return;
     }
 
@@ -292,7 +289,7 @@ $('#login-form').addEventListener('submit', async e=>{
     const perms = ROLE_PERMISSIONS[adminRow.role];
     if (!perms) {
       errEl.textContent = 'Role desconhecida: "' + adminRow.role + '". Use owner/admin/financeiro/visualizador.';
-      await supabase.auth.signOut();
+      await sb.auth.signOut();
       return;
     }
 
@@ -319,7 +316,7 @@ $('#login-form').addEventListener('submit', async e=>{
 });
 
 $('#logout-btn').addEventListener('click', async ()=>{
-  await supabase.auth.signOut();
+  await sb.auth.signOut();
   location.reload();
 });
 
@@ -336,9 +333,6 @@ function renderNav(){
   });
 }
 
-/* =====================================================================
-   [FIX 8] Navegação com fallback de permissão
-   ===================================================================== */
 async function navigate(page){
   if(!can(page)){
     toast('Sem permissão para acessar este módulo.','error');
@@ -370,9 +364,9 @@ async function navigate(page){
    ===================================================================== */
 async function renderDashboard(){
   const [resRes, tripRes, txRes] = await Promise.all([
-    supabase.from('reservations').select('id,reservation_status,total_amount,created_at'),
-    supabase.from('destinations').select('id,is_active'),
-    supabase.from('financial_transactions').select('type,amount'),
+    sb.from('reservations').select('id,reservation_status,total_amount,created_at'),
+    sb.from('destinations').select('id,is_active'),
+    sb.from('financial_transactions').select('type,amount'),
   ]);
   if(resRes.error) console.warn('reservations:', resRes.error);
   if(tripRes.error) console.warn('destinations:', tripRes.error);
@@ -404,7 +398,7 @@ async function renderDashboard(){
         <thead><tr><th>Últimas reservas</th><th>Status</th><th>Valor</th><th>Data</th></tr></thead>
         <tbody>
           ${reservations.slice(0,5).map(r=>`
-            <tr><td>#${r.id.slice(0,8)}</td><td><span class="badge ${r.reservation_status}">${r.reservation_status}</span></td><td>${fmtBRL(r.total_amount)}</td><td>${fmtDate(r.created_at)}</td></tr>
+            <tr><td>#${String(r.id).slice(0,8)}</td><td><span class="badge ${r.reservation_status}">${r.reservation_status}</span></td><td>${fmtBRL(r.total_amount)}</td><td>${fmtDate(r.created_at)}</td></tr>
           `).join('') || '<tr><td colspan="4" class="empty">Sem reservas ainda.</td></tr>'}
         </tbody>
       </table>
@@ -416,7 +410,7 @@ async function renderDashboard(){
    ===================================================================== */
 async function renderTrips(){
   $('#page-actions').innerHTML = `<button class="btn btn-primary" id="new-trip-btn">+ Nova viagem</button>`;
-  const { data, error } = await supabase.from('destinations').select('*').order('created_at',{ascending:false});
+  const { data, error } = await sb.from('destinations').select('*').order('created_at',{ascending:false});
   if(error) throw error;
   state.data.trips = data || [];
 
@@ -472,7 +466,6 @@ function openTripForm(id=null){
   $('#save-form').onclick = ()=> saveTrip(trip?.id||null);
 }
 
-/* [FIX 6] validação de tipo e tamanho da imagem */
 async function saveTrip(id){
   const errEl = $('#form-error');
   errEl.textContent = '';
@@ -493,21 +486,21 @@ async function saveTrip(id){
   let image_url = id ? state.data.trips.find(t=>t.id===id)?.image_url : null;
   if(file){
     const path = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g,'')}`;
-    const { error: upErr } = await supabase.storage.from(BUCKET_IMAGES).upload(path, file);
+    const { error: upErr } = await sb.storage.from(BUCKET_IMAGES).upload(path, file);
     if(upErr){ errEl.textContent = 'Erro no upload: '+upErr.message; return; }
-    const { data: pub } = supabase.storage.from(BUCKET_IMAGES).getPublicUrl(path);
+    const { data: pub } = sb.storage.from(BUCKET_IMAGES).getPublicUrl(path);
     image_url = pub.publicUrl;
   }
 
   const payload = { name, description, departure_date, return_date, price, image_url, updated_at: new Date().toISOString() };
   let res;
   if(id){
-    res = await supabase.from('destinations').update(payload).eq('id', id);
+    res = await sb.from('destinations').update(payload).eq('id', id);
     await logActivity('update_trip', `Viagem ${id} atualizada`);
   }else{
     payload.is_active = false;
     payload.created_at = new Date().toISOString();
-    res = await supabase.from('destinations').insert(payload);
+    res = await sb.from('destinations').insert(payload);
     await logActivity('create_trip', `Viagem "${name}" criada`);
   }
   if(res.error){ errEl.textContent = 'Erro ao salvar: '+res.error.message; return; }
@@ -518,17 +511,16 @@ async function saveTrip(id){
 
 async function toggleTrip(id){
   const trip = state.data.trips.find(t=>t.id===id);
-  const { error } = await supabase.from('destinations').update({ is_active: !trip.is_active }).eq('id', id);
+  const { error } = await sb.from('destinations').update({ is_active: !trip.is_active }).eq('id', id);
   if(error){ toast('Erro: '+error.message,'error'); return; }
   await logActivity('toggle_trip', `Viagem ${id} ${trip.is_active?'despublicada':'publicada'}`);
   toast(trip.is_active?'Despublicada.':'Publicada.','success');
   renderTrips();
 }
 
-/* [FIX 7] mensagem amigável ao excluir viagem com reservas */
 async function deleteTrip(id){
   if(!confirm('Excluir esta viagem?')) return;
-  const { error } = await supabase.from('destinations').delete().eq('id', id);
+  const { error } = await sb.from('destinations').delete().eq('id', id);
   if(error){
     if(error.message.includes('foreign key') || error.code === '23503'){
       toast('Não é possível excluir: há reservas vinculadas a esta viagem.','error');
@@ -546,7 +538,7 @@ async function deleteTrip(id){
    RESERVAS
    ===================================================================== */
 async function renderReservations(){
-  const { data, error } = await supabase
+  const { data, error } = await sb
     .from('reservations')
     .select('*, destinations(name)')
     .order('created_at',{ascending:false});
@@ -601,7 +593,7 @@ function changeReservationStatus(id){
   `);
   $('#save-status').onclick = async ()=>{
     const status = $('#f-status').value;
-    const { error } = await supabase.from('reservations').update({ reservation_status: status }).eq('id', id);
+    const { error } = await sb.from('reservations').update({ reservation_status: status }).eq('id', id);
     if(error){ toast('Erro: '+error.message,'error'); return; }
     await logActivity('update_reservation_status', `Reserva ${id} → ${status}`);
     closeModal();
@@ -614,13 +606,13 @@ function openWhatsApp(id){
   const r = state.data.reservations.find(x=>x.id===id);
   const phone = (r.phone||'').replace(/\D/g,'');
   if(!phone){ toast('Cliente sem telefone cadastrado.','error'); return; }
-  const msg = encodeURIComponent(`Olá ${r.customer_name}, sobre sua reserva #${r.id.slice(0,8)} para ${r.destinations?.name||'a viagem'}.`);
+  const msg = encodeURIComponent(`Olá ${r.customer_name}, sobre sua reserva #${String(r.id).slice(0,8)} para ${r.destinations?.name||'a viagem'}.`);
   window.open(`https://wa.me/55${phone}?text=${msg}`,'_blank');
 }
 
 async function deleteReservation(id){
   if(!confirm('Excluir esta reserva?')) return;
-  const { error } = await supabase.from('reservations').delete().eq('id', id);
+  const { error } = await sb.from('reservations').delete().eq('id', id);
   if(error){ toast('Erro: '+error.message,'error'); return; }
   await logActivity('delete_reservation', `Reserva ${id} excluída`);
   toast('Reserva excluída.','success');
@@ -633,8 +625,8 @@ async function deleteReservation(id){
 async function renderFinance(){
   $('#page-actions').innerHTML = `<button class="btn btn-primary" id="new-tx-btn">+ Lançamento</button>`;
   const [txRes, tripRes] = await Promise.all([
-    supabase.from('financial_transactions').select('*, destinations(name)').order('transaction_date',{ascending:false}),
-    supabase.from('destinations').select('id,name').order('name'),
+    sb.from('financial_transactions').select('*, destinations(name)').order('transaction_date',{ascending:false}),
+    sb.from('destinations').select('id,name').order('name'),
   ]);
   if(txRes.error) throw txRes.error;
   const txs = txRes.data || [];
@@ -695,7 +687,7 @@ function openTxForm(){
     const transaction_date = $('#tx-date').value;
     const destination_id = $('#tx-trip').value || null;
     if(!description || amount<=0 || !transaction_date){ $('#tx-error').textContent='Preencha todos os campos.'; return; }
-    const { error } = await supabase.from('financial_transactions').insert({ type, description, amount, transaction_date, destination_id });
+    const { error } = await sb.from('financial_transactions').insert({ type, description, amount, transaction_date, destination_id });
     if(error){ $('#tx-error').textContent = error.message; return; }
     await logActivity('create_tx', `${type} ${fmtBRL(amount)} — ${description}`);
     closeModal();
@@ -706,7 +698,7 @@ function openTxForm(){
 
 async function deleteTx(id){
   if(!confirm('Excluir este lançamento?')) return;
-  const { error } = await supabase.from('financial_transactions').delete().eq('id', id);
+  const { error } = await sb.from('financial_transactions').delete().eq('id', id);
   if(error){ toast('Erro: '+error.message,'error'); return; }
   await logActivity('delete_tx', `Lançamento ${id} excluído`);
   toast('Lançamento excluído.','success');
@@ -718,8 +710,8 @@ async function deleteTx(id){
    ===================================================================== */
 async function renderReports(){
   const [txRes, tripRes] = await Promise.all([
-    supabase.from('financial_transactions').select('*, destinations(name)').order('transaction_date',{ascending:false}),
-    supabase.from('destinations').select('id,name').order('name'),
+    sb.from('financial_transactions').select('*, destinations(name)').order('transaction_date',{ascending:false}),
+    sb.from('destinations').select('id,name').order('name'),
   ]);
   if(txRes.error) throw txRes.error;
   const txs = txRes.data || [];
@@ -800,7 +792,7 @@ async function renderReports(){
    CONFIGURAÇÕES
    ===================================================================== */
 async function renderSettings(){
-  const { data, error } = await supabase.from('admin_users').select('id,user_id,role,created_at');
+  const { data, error } = await sb.from('admin_users').select('id,user_id,role,created_at');
   if(error) throw error;
   state.data.admins = data || [];
 
@@ -826,7 +818,7 @@ async function renderSettings(){
   $('#view').querySelectorAll('[data-del-admin]').forEach(btn=>{
     btn.onclick = async ()=>{
       if(!confirm('Remover este administrador?')) return;
-      const { error } = await supabase.from('admin_users').delete().eq('id', btn.dataset.delAdmin);
+      const { error } = await sb.from('admin_users').delete().eq('id', btn.dataset.delAdmin);
       if(error){ toast('Erro: '+error.message,'error'); return; }
       await logActivity('remove_admin', 'Administrador removido');
       toast('Admin removido.','success');
@@ -836,17 +828,17 @@ async function renderSettings(){
 }
 
 /* =====================================================================
-   [FIX 4] BOOT — usa getUser() (valida no servidor), não getSession()
+   BOOT — restaura sessão se já logado
    ===================================================================== */
 (async ()=>{
   try {
-    const { data:{ user }, error } = await supabase.auth.getUser();
-    if(error || !user) return; // sem sessão válida → mostra login
+    const { data:{ user }, error } = await sb.auth.getUser();
+    if(error || !user) return;
 
-    const { data: adminRow, error: adminError } = await supabase
+    const { data: adminRow, error: adminError } = await sb
       .from('admin_users').select('role').eq('user_id', user.id).maybeSingle();
 
-    if(adminError || !adminRow) return; // deixa a tela de login aparecer
+    if(adminError || !adminRow) return;
 
     const perms = ROLE_PERMISSIONS[adminRow.role];
     if(!perms) return;
@@ -867,9 +859,6 @@ async function renderSettings(){
 })();
 
 $('#mobile-menu-btn').onclick = ()=> $('#sidebar').classList.toggle('open');
-
-// [FIX] closeModal exposto ao escopo global para o onclick inline funcionar
-window.closeModal = closeModal;
 </script>
 </body>
 </html>
