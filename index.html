@@ -16,14 +16,23 @@
   body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
   button{cursor:pointer;font-family:inherit}
   input,select,textarea{font-family:inherit}
+
+  /* LOGIN */
   #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
   .login-card{background:var(--panel);padding:2rem;border-radius:var(--radius);box-shadow:var(--shadow);width:100%;max-width:380px}
   .login-card h1{font-size:1.25rem;margin-bottom:.25rem}
   .login-card p{color:var(--muted);font-size:.85rem;margin-bottom:1.5rem}
+
+  /* CAMPOS */
   .field{margin-bottom:1rem}
   .field label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:.35rem}
-  .field input,.field select,.field textarea{width:100%;padding:.65rem .75rem;background:var(--panel-2);border:1px solid #475569;border-radius:8px;color:var(--text);font-size:.9rem}
+  .field input,.field select,.field textarea{
+    width:100%;padding:.65rem .75rem;background:var(--panel-2);
+    border:1px solid #475569;border-radius:8px;color:var(--text);font-size:.9rem
+  }
   .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--primary)}
+
+  /* BOTÕES */
   .btn{padding:.65rem 1rem;border:none;border-radius:8px;font-weight:600;font-size:.9rem;transition:.15s}
   .btn-primary{background:var(--primary);color:#fff}
   .btn-primary:hover{background:var(--primary-2)}
@@ -34,68 +43,116 @@
   .btn-sm{padding:.4rem .7rem;font-size:.78rem}
   .btn-block{width:100%}
   .error-msg{color:var(--danger);font-size:.8rem;margin-top:.5rem;min-height:1.1rem;word-break:break-word}
+
+  /* LAYOUT */
   #app{display:none;min-height:100vh}
   .layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
-  aside{background:var(--panel);border-right:1px solid #334155;padding:1.25rem 0;display:flex;flex-direction:column}
+
+  /* SIDEBAR */
+  aside{
+    background:var(--panel);border-right:1px solid #334155;
+    padding:1.25rem 0;display:flex;flex-direction:column;
+    position:sticky;top:0;height:100vh;overflow-y:auto;
+  }
   .brand{padding:0 1.25rem 1rem;font-weight:700;font-size:1.05rem;border-bottom:1px solid #334155;margin-bottom:.75rem}
   .brand small{display:block;font-weight:400;font-size:.7rem;color:var(--muted);margin-top:.2rem}
   nav{display:flex;flex-direction:column;gap:.2rem;padding:0 .5rem;flex:1}
-  .nav-item{display:flex;align-items:center;gap:.6rem;padding:.6rem .75rem;border-radius:8px;color:var(--muted);background:transparent;border:none;text-align:left;font-size:.88rem;width:100%}
+  .nav-item{
+    display:flex;align-items:center;gap:.6rem;padding:.6rem .75rem;border-radius:8px;
+    color:var(--muted);background:transparent;border:none;text-align:left;font-size:.88rem;width:100%
+  }
   .nav-item:hover{background:var(--panel-2);color:var(--text)}
   .nav-item.active{background:var(--primary);color:#fff}
-  .nav-item .icon{width:18px;text-align:center}
+  .nav-item .icon{width:18px;text-align:center;flex-shrink:0}
   .user-box{padding:1rem 1.25rem 0;border-top:1px solid #334155;margin-top:.75rem;font-size:.78rem}
   .user-box .role{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em}
   .user-box button{margin-top:.6rem;width:100%}
-  main{padding:1.5rem 2rem;overflow:auto}
+  #user-email{word-break:break-all;font-size:.78rem}
+
+  /* MAIN */
+  main{padding:1.5rem 2rem;overflow:auto;min-width:0}
   .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem}
   .page-header h2{font-size:1.35rem}
   .page-header .sub{color:var(--muted);font-size:.85rem;margin-top:.15rem}
-  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-bottom:2rem}
+
+  /* CARDS */
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;margin-bottom:2rem}
   .card{background:var(--panel);border:1px solid #334155;border-radius:var(--radius);padding:1.1rem}
-  .card .label{font-size:.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
-  .card .value{font-size:1.6rem;font-weight:700;margin-top:.35rem}
+  .card .label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .card .value{font-size:1.5rem;font-weight:700;margin-top:.35rem;word-break:break-word}
   .card .value.success{color:var(--success)}
   .card .value.danger{color:var(--danger)}
   .card .value.warning{color:var(--warning)}
-  .table-wrap{background:var(--panel);border:1px solid #334155;border-radius:var(--radius);overflow:auto}
-  table{width:100%;border-collapse:collapse;font-size:.85rem}
-  th,td{padding:.7rem .9rem;text-align:left;border-bottom:1px solid #334155}
+
+  /* TABELAS */
+  .table-wrap{background:var(--panel);border:1px solid #334155;border-radius:var(--radius);overflow-x:auto;-webkit-overflow-scrolling:touch}
+  table{width:100%;border-collapse:collapse;font-size:.85rem;min-width:640px}
+  th,td{padding:.7rem .9rem;text-align:left;border-bottom:1px solid #334155;white-space:nowrap}
   th{background:var(--panel-2);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
   tr:last-child td{border-bottom:none}
-  .badge{display:inline-block;padding:.2rem .55rem;border-radius:999px;font-size:.7rem;font-weight:600}
+  td:last-child{white-space:normal}
+
+  /* BADGES */
+  .badge{display:inline-block;padding:.2rem .55rem;border-radius:999px;font-size:.7rem;font-weight:600;white-space:nowrap}
   .badge.pending{background:#78350f;color:#fcd34d}
   .badge.confirmed{background:#065f46;color:#6ee7b7}
   .badge.cancelled{background:#7f1d1d;color:#fca5a5}
   .badge.paid{background:#065f46;color:#6ee7b7}
   .badge.published{background:#1e3a8a;color:#93c5fd}
   .badge.unpublished{background:#374151;color:#9ca3af}
+
+  /* MODAL */
   .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:1rem;z-index:50}
   .modal-backdrop.open{display:flex}
   .modal{background:var(--panel);border-radius:var(--radius);width:100%;max-width:560px;max-height:90vh;overflow:auto;box-shadow:var(--shadow)}
   .modal-header{padding:1.1rem 1.25rem;border-bottom:1px solid #334155;display:flex;justify-content:space-between;align-items:center}
   .modal-header h3{font-size:1rem}
   .modal-body{padding:1.25rem}
-  .modal-footer{padding:1rem 1.25rem;border-top:1px solid #334155;display:flex;justify-content:flex-end;gap:.5rem}
+  .modal-footer{padding:1rem 1.25rem;border-top:1px solid #334155;display:flex;justify-content:flex-end;gap:.5rem;flex-wrap:wrap}
   .close-x{background:none;border:none;color:var(--muted);font-size:1.3rem;line-height:1}
-  #toast-container{position:fixed;top:1rem;right:1rem;display:flex;flex-direction:column;gap:.5rem;z-index:100}
+
+  /* TOAST */
+  #toast-container{position:fixed;top:1rem;right:1rem;left:auto;display:flex;flex-direction:column;gap:.5rem;z-index:100;max-width:calc(100vw - 2rem)}
   .toast{padding:.75rem 1rem;border-radius:8px;font-size:.85rem;color:#fff;box-shadow:var(--shadow);animation:slide .2s ease}
   .toast.success{background:var(--success)}
   .toast.error{background:var(--danger)}
   .toast.info{background:var(--primary)}
   @keyframes slide{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
   .empty{text-align:center;padding:2rem;color:var(--muted);font-size:.85rem}
   .row-actions{display:flex;gap:.35rem;flex-wrap:wrap}
   .thumb{width:48px;height:32px;object-fit:cover;border-radius:4px}
   .form-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
-  .mobile-menu-btn{display:none;background:var(--panel-2);border:none;color:var(--text);padding:.5rem .7rem;border-radius:8px;margin-right:.5rem}
-  @media(max-width:900px){
+
+  /* MOBILE */
+  .mobile-menu-btn{display:none;background:var(--panel-2);border:none;color:var(--text);padding:.5rem .7rem;border-radius:8px;margin-right:.5rem;font-size:1.1rem}
+  .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:39}
+
+  @media (max-width: 900px){
     .layout{grid-template-columns:1fr}
-    aside{position:fixed;left:-260px;top:0;bottom:0;width:240px;z-index:40;transition:.2s}
+    aside{position:fixed;left:-280px;top:0;bottom:0;width:260px;z-index:40;transition:left .25s ease;height:100vh}
     aside.open{left:0}
-    main{padding:1rem}
+    .sidebar-overlay.open{display:block}
+    main{padding:1rem .75rem}
+    .mobile-menu-btn{display:inline-flex;align-items:center;justify-content:center}
+    .page-header h2{font-size:1.15rem}
+    .page-header .sub{font-size:.78rem}
+    .cards{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.65rem}
+    .card{padding:.85rem}
+    .card .value{font-size:1.25rem}
     .form-row{grid-template-columns:1fr}
-    .mobile-menu-btn{display:inline-flex}
+    .modal{max-width:100%;max-height:95vh}
+    .modal-body{padding:1rem}
+    .modal-footer{padding:.85rem 1rem}
+    #toast-container{top:auto;bottom:1rem;right:1rem;left:1rem}
+    @keyframes slide{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+  }
+
+  @media (max-width: 480px){
+    .cards{grid-template-columns:1fr 1fr}
+    .card .value{font-size:1.1rem}
+    .btn-sm{padding:.45rem .6rem;font-size:.72rem}
+    .row-actions{gap:.25rem}
   }
 </style>
 </head>
@@ -131,6 +188,7 @@
         <button class="btn btn-ghost btn-sm" id="logout-btn">Sair</button>
       </div>
     </aside>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
     <main>
       <div class="page-header">
         <div style="display:flex;align-items:center">
@@ -169,7 +227,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const BUCKET_IMAGES = 'trip-images';
 
 /* =====================================================================
-   PERMISSÕES POR ROLE
+   PERMISSÕES
    ===================================================================== */
 const ROLE_PERMISSIONS = {
   owner:       ['dashboard','trips','reservations','finance','reports','settings','manage_users'],
@@ -188,9 +246,7 @@ const MENU = [
 ];
 
 /* =====================================================================
-   [CORREÇÃO CRÍTICA] Variável renomeada para 'sb'
-   O CDN do Supabase declara window.supabase. Declarar 'const supabase'
-   no escopo global causa: Identifier 'supabase' has already been declared.
+   CLIENTE SUPABASE (variável 'sb' para não colidir com a global do CDN)
    ===================================================================== */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const state = { user:null, role:null, permissions:[], currentPage:'dashboard', data:{} };
@@ -328,11 +384,31 @@ function renderNav(){
     const btn = document.createElement('button');
     btn.className = 'nav-item' + (state.currentPage===item.key?' active':'');
     btn.innerHTML = `<span class="icon">${item.icon}</span> ${item.label}`;
-    btn.onclick = ()=>{ navigate(item.key); $('#sidebar').classList.remove('open'); };
+    btn.onclick = ()=>{ navigate(item.key); closeSidebar(); };
     nav.appendChild(btn);
   });
 }
 
+/* =====================================================================
+   MOBILE SIDEBAR
+   ===================================================================== */
+function openSidebar(){
+  $('#sidebar').classList.add('open');
+  $('#sidebar-overlay').classList.add('open');
+}
+function closeSidebar(){
+  $('#sidebar').classList.remove('open');
+  $('#sidebar-overlay').classList.remove('open');
+}
+$('#mobile-menu-btn').onclick = ()=>{
+  const s = $('#sidebar');
+  if (s.classList.contains('open')) closeSidebar(); else openSidebar();
+};
+$('#sidebar-overlay').onclick = closeSidebar;
+
+/* =====================================================================
+   NAVEGAÇÃO
+   ===================================================================== */
 async function navigate(page){
   if(!can(page)){
     toast('Sem permissão para acessar este módulo.','error');
@@ -857,8 +933,6 @@ async function renderSettings(){
     console.warn('boot:', err);
   }
 })();
-
-$('#mobile-menu-btn').onclick = ()=> $('#sidebar').classList.toggle('open');
 </script>
 </body>
 </html>
