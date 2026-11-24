@@ -65,10 +65,7 @@
     width:100%;max-width:400px;
     border:1px solid var(--border);
   }
-  .login-brand{
-    display:flex;align-items:center;gap:.6rem;
-    margin-bottom:1.25rem;
-  }
+  .login-brand{display:flex;align-items:center;gap:.6rem;margin-bottom:1.25rem}
   .login-brand .logo{
     width:42px;height:42px;border-radius:12px;
     background:linear-gradient(135deg,var(--blue-500),var(--blue-700));
@@ -110,11 +107,6 @@
   .btn-danger:hover:not(:disabled){background:#dc2626}
   .btn-sm{padding:.45rem .75rem;font-size:.8rem;border-radius:8px}
   .btn-block{width:100%}
-  .btn-icon{
-    width:38px;height:38px;padding:0;border-radius:10px;
-    background:var(--white);border:1.5px solid var(--border);color:var(--text);
-  }
-  .btn-icon:hover{border-color:var(--blue-200);background:var(--blue-50)}
 
   .error-msg{color:var(--danger);font-size:.8rem;margin-top:.5rem;min-height:1.1rem;word-break:break-word}
 
@@ -235,7 +227,6 @@
     background:var(--blue-50);
     font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;
     color:var(--blue-700);font-weight:700;
-    position:sticky;top:0;
   }
   tr:last-child td{border-bottom:none}
   tbody tr:hover{background:#fafcff}
@@ -244,15 +235,42 @@
     display:inline-block;padding:.22rem .6rem;border-radius:999px;
     font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
   }
+  .badge.published{background:var(--blue-100);color:var(--blue-700)}
   .badge.pending{background:#fef3c7;color:#92400e}
   .badge.confirmed{background:#d1fae5;color:#065f46}
   .badge.cancelled{background:#fee2e2;color:#991b1b}
-  .badge.paid{background:#d1fae5;color:#065f46}
-  .badge.published{background:var(--blue-100);color:var(--blue-700)}
-  .badge.unpublished{background:#f1f5f9;color:#475569}
 
   .row-actions{display:flex;gap:.35rem;flex-wrap:wrap}
   .thumb{width:52px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--border)}
+
+  /* ========== CARDS DE GRUPO (RESERVAS POR DESTINO) ========== */
+  .group-card{
+    background:var(--white);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow-sm);
+    margin-bottom:1.25rem;
+    overflow:hidden;
+  }
+  .group-head{
+    display:flex;justify-content:space-between;align-items:center;
+    gap:1rem;flex-wrap:wrap;
+    padding:1rem 1.25rem;
+    background:linear-gradient(90deg,var(--blue-50),var(--white));
+    border-bottom:1px solid var(--border);
+  }
+  .group-title{display:flex;align-items:center;gap:.85rem;min-width:0}
+  .group-icon{
+    width:44px;height:44px;border-radius:12px;
+    background:linear-gradient(135deg,var(--blue-500),var(--blue-700));
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:1rem;flex-shrink:0;
+    box-shadow:0 4px 12px rgba(37,99,235,.25);
+  }
+  .group-title h3{font-size:1.05rem;line-height:1.2;color:var(--text)}
+  .group-title span{font-size:.78rem;color:var(--muted)}
+  .group-card .table-scroll{overflow-x:auto}
+  .group-card table{min-width:600px}
 
   /* ========== MODAL ========== */
   .modal-backdrop{
@@ -341,6 +359,8 @@
     .page-header h2{font-size:1.15rem}
     #toast-container{left:.75rem;right:.75rem;top:.75rem}
     .toast{max-width:none}
+    .group-head{padding:.85rem 1rem}
+    .group-title h3{font-size:.95rem}
   }
 </style>
 </head>
@@ -448,16 +468,10 @@ const ROLE_PERMISSIONS = {
   visualizador:['dashboard','trips','reservations','reports'],
 };
 
-/* Abas ativas no menu. Financeiro/Relatórios/Configurações estão comentadas
-   porque dependem de tabelas que ainda não existem no seu Supabase.
-   Para reativar, remova o "//" das linhas correspondentes. */
 const MENU = [
   { key:'dashboard',    label:'Dashboard', icon:'fa-chart-line',      title:'Dashboard', sub:'Visão geral' },
   { key:'trips',        label:'Viagens',   icon:'fa-route',           title:'Viagens',   sub:'Destinos cadastrados' },
   { key:'reservations', label:'Reservas',  icon:'fa-clipboard-list',  title:'Reservas',  sub:'Solicitações de clientes' },
-  // { key:'finance',   label:'Financeiro', icon:'fa-wallet',          title:'Financeiro', sub:'Entradas, despesas e saldo' },
-  // { key:'reports',   label:'Relatórios', icon:'fa-chart-pie',       title:'Relatórios', sub:'Consultas e exportações' },
-  // { key:'settings',  label:'Configurações', icon:'fa-gear',         title:'Configurações', sub:'Painel e usuários' },
 ];
 
 /* =====================================================================
@@ -603,9 +617,6 @@ async function navigate(page){
     if(page==='dashboard')    await renderDashboard();
     if(page==='trips')        await renderTrips();
     if(page==='reservations') await renderReservations();
-    if(page==='finance')      await renderFinance();
-    if(page==='reports')      await renderReports();
-    if(page==='settings')     await renderSettings();
   }catch(err){
     console.error('Erro em', page, err);
     $('#view').innerHTML = `<div class="empty"><i class="fas fa-triangle-exclamation"></i>Erro ao carregar: ${esc(err.message)}</div>`;
@@ -613,7 +624,7 @@ async function navigate(page){
 }
 
 /* =====================================================================
-   DASHBOARD — 'reservas' + 'viagens'
+   DASHBOARD
    ===================================================================== */
 async function renderDashboard(){
   const [resRes, tripRes] = await Promise.all([
@@ -657,9 +668,16 @@ async function renderDashboard(){
 }
 
 /* =====================================================================
-   VIAGENS — 'viagens'
+   VIAGENS — lista + CRUD
    ===================================================================== */
 async function renderTrips(){
+  $('#page-actions').innerHTML = `
+    <button class="btn btn-primary btn-sm" id="new-trip-btn">
+      <i class="fas fa-plus"></i> Nova viagem
+    </button>
+  `;
+  $('#new-trip-btn').onclick = ()=> openTripForm();
+
   const { data, error } = await sb.from('viagens').select('*').order('data_inicio',{ascending:false});
   if(error) throw error;
   state.data.trips = data || [];
@@ -668,7 +686,12 @@ async function renderTrips(){
     <div class="table-wrap">
       <div class="table-scroll">
         <table>
-          <thead><tr><th>Imagem</th><th>Destino</th><th>Saída</th><th>Retorno</th><th>Preço</th><th>Ações</th></tr></thead>
+          <thead>
+            <tr>
+              <th>Imagem</th><th>Destino</th><th>Saída</th><th>Retorno</th>
+              <th>Preço</th><th>Modalidade</th><th>Ações</th>
+            </tr>
+          </thead>
           <tbody>
             ${state.data.trips.map(t=>`
               <tr>
@@ -677,63 +700,226 @@ async function renderTrips(){
                 <td>${fmtDate(t.data_inicio)}</td>
                 <td>${fmtDate(t.data_fim)}</td>
                 <td>${fmtBRL(t.preco)}</td>
+                <td><span class="badge published">${esc(t.modalidade||'Excursão')}</span></td>
                 <td class="row-actions">
+                  <button class="btn btn-ghost btn-sm" data-act="edit" data-id="${t.id}">
+                    <i class="fas fa-pen"></i> Editar
+                  </button>
                   <button class="btn btn-danger btn-sm" data-act="del" data-id="${t.id}">
                     <i class="fas fa-trash"></i> Excluir
                   </button>
                 </td>
-              </tr>`).join('') || '<tr><td colspan="6" class="empty"><i class="fas fa-route"></i>Nenhuma viagem cadastrada.</td></tr>'}
+              </tr>`).join('') || '<tr><td colspan="7" class="empty"><i class="fas fa-route"></i>Nenhuma viagem cadastrada.</td></tr>'}
           </tbody>
         </table>
       </div>
     </div>`;
 
-  $('#view').querySelectorAll('[data-act="del"]').forEach(btn=>{
-    btn.onclick = async ()=>{
-      if(!confirm('Excluir esta viagem?')) return;
-      const { error } = await sb.from('viagens').delete().eq('id', btn.dataset.id);
-      if(error){ toast('Erro: '+error.message,'error'); return; }
-      toast('Viagem excluída.','success');
-      renderTrips();
+  $('#view').querySelectorAll('[data-act]').forEach(btn=>{
+    const id = btn.dataset.id, act = btn.dataset.act;
+    btn.onclick = ()=>{
+      if(act==='edit') openTripForm(id);
+      if(act==='del') deleteTrip(id);
     };
   });
 }
 
+/* ---------- Formulário de viagem (criar / editar) ---------- */
+function openTripForm(id=null){
+  const trip = id ? state.data.trips.find(t=>String(t.id)===String(id)) : null;
+
+  openModal(trip ? 'Editar viagem' : 'Nova viagem', `
+    <div class="field">
+      <label>Nome do destino *</label>
+      <input id="f-name" value="${esc(trip?.nome||'')}" placeholder="Ex.: Dunas de Natal">
+    </div>
+    <div class="field">
+      <label>Descrição</label>
+      <textarea id="f-desc" rows="3" placeholder="Breve descrição da viagem">${esc(trip?.descricao||'')}</textarea>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>Data de saída</label>
+        <input type="date" id="f-dep" value="${trip?.data_inicio||''}">
+      </div>
+      <div class="field">
+        <label>Data de retorno</label>
+        <input type="date" id="f-ret" value="${trip?.data_fim||''}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="field">
+        <label>Preço por pessoa (R$) *</label>
+        <input type="number" step="0.01" min="0" id="f-price" value="${trip?.preco||''}" placeholder="0,00">
+      </div>
+      <div class="field">
+        <label>Modalidade</label>
+        <select id="f-mod">
+          <option value="Excursão" ${trip?.modalidade==='Excursão'?'selected':''}>Excursão</option>
+          <option value="Pacote" ${trip?.modalidade==='Pacote'?'selected':''}>Pacote</option>
+          <option value="Bate-volta" ${trip?.modalidade==='Bate-volta'?'selected':''}>Bate-volta</option>
+          <option value="Cruzeiro" ${trip?.modalidade==='Cruzeiro'?'selected':''}>Cruzeiro</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>URL da imagem (opcional)</label>
+      <input id="f-img" value="${esc(trip?.imagem||'')}" placeholder="https://...">
+    </div>
+    <div class="error-msg" id="form-error"></div>
+  `, `
+    <button class="btn btn-ghost" id="cancel-form">Cancelar</button>
+    <button class="btn btn-primary" id="save-form">
+      <i class="fas fa-check"></i> ${trip ? 'Salvar alterações' : 'Cadastrar viagem'}
+    </button>
+  `);
+
+  $('#cancel-form').onclick = closeModal;
+  $('#save-form').onclick = ()=> saveTrip(trip?.id || null);
+}
+
+async function saveTrip(id){
+  const errEl = $('#form-error');
+  errEl.textContent = '';
+
+  const nome        = $('#f-name').value.trim();
+  const descricao   = $('#f-desc').value.trim();
+  const data_inicio = $('#f-dep').value || null;
+  const data_fim    = $('#f-ret').value || null;
+  const preco       = parseFloat($('#f-price').value || 0);
+  const modalidade  = $('#f-mod').value;
+  const imagem      = $('#f-img').value.trim() || null;
+
+  if(!nome){ errEl.textContent = 'Informe o nome do destino.'; return; }
+  if(!preco || preco <= 0){ errEl.textContent = 'Informe um preço válido.'; return; }
+
+  const slug = nome.toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .replace(/[^a-z0-9]+/g,'-')
+    .replace(/^-+|-+$/g,'');
+
+  const payload = { nome, descricao, data_inicio, data_fim, preco, modalidade, imagem, slug };
+
+  const btn = $('#save-form');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando…';
+
+  let res;
+  if(id){
+    res = await sb.from('viagens').update(payload).eq('id', id);
+  } else {
+    res = await sb.from('viagens').insert(payload);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="fas fa-check"></i> Salvar';
+
+  if(res.error){
+    errEl.textContent = 'Erro ao salvar: ' + res.error.message;
+    return;
+  }
+
+  closeModal();
+  toast(id ? 'Viagem atualizada.' : 'Viagem cadastrada e publicada!','success');
+  renderTrips();
+}
+
+async function deleteTrip(id){
+  if(!confirm('Excluir esta viagem? As reservas vinculadas podem ficar órfãs.')) return;
+  const { error } = await sb.from('viagens').delete().eq('id', id);
+  if(error){ toast('Erro: '+error.message,'error'); return; }
+  toast('Viagem excluída.','success');
+  renderTrips();
+}
+
 /* =====================================================================
-   RESERVAS — 'reservas'
+   RESERVAS — agrupadas por destino + exportar CSV
    ===================================================================== */
 async function renderReservations(){
   const { data, error } = await sb.from('reservas').select('*');
   if(error) throw error;
   state.data.reservations = data || [];
 
-  $('#view').innerHTML = `
-    <div class="table-wrap">
-      <div class="table-scroll">
-        <table>
-          <thead><tr><th>Cliente</th><th>Telefone</th><th>CPF</th><th>Destino</th><th>Assento</th><th>Pagamento</th><th>Ações</th></tr></thead>
-          <tbody>
-            ${state.data.reservations.map(r=>`
+  const grupos = {};
+  state.data.reservations.forEach(r => {
+    const chave = (r.destino || 'Sem destino').toString().trim() || 'Sem destino';
+    if(!grupos[chave]) grupos[chave] = [];
+    grupos[chave].push(r);
+  });
+
+  const destinos = Object.keys(grupos).sort((a,b)=>a.localeCompare(b,'pt-BR'));
+
+  $('#page-actions').innerHTML = `
+    <button class="btn btn-primary btn-sm" id="export-all">
+      <i class="fas fa-file-csv"></i> Baixar todas (${state.data.reservations.length})
+    </button>
+  `;
+  $('#export-all').onclick = ()=> exportarCSV(state.data.reservations, 'todas-reservas');
+
+  if(destinos.length === 0){
+    $('#view').innerHTML = `
+      <div class="table-wrap">
+        <div class="empty"><i class="fas fa-clipboard-list"></i>Sem reservas.</div>
+      </div>`;
+    return;
+  }
+
+  $('#view').innerHTML = destinos.map(destino => {
+    const lista = grupos[destino];
+    const totalPessoas = lista.length;
+    const assentos = lista.map(r=>r.assento).filter(a=>a!=null).sort((a,b)=>a-b).join(', ');
+
+    return `
+      <div class="group-card">
+        <div class="group-head">
+          <div class="group-title">
+            <div class="group-icon"><i class="fas fa-map-location-dot"></i></div>
+            <div>
+              <h3>${esc(destino)}</h3>
+              <span>${totalPessoas} reserva${totalPessoas>1?'s':''} · Assentos: ${assentos || '—'}</span>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" data-export="${esc(destino)}">
+            <i class="fas fa-download"></i> Baixar lista
+          </button>
+        </div>
+        <div class="table-scroll">
+          <table>
+            <thead>
               <tr>
-                <td>${esc(r.nome)}</td>
-                <td>${esc(r.telefone||'—')}</td>
-                <td>${esc(r.cpf||'—')}</td>
-                <td>${esc(r.destino||'—')}</td>
-                <td>${esc(r.assento??'—')}</td>
-                <td>${esc(r.pagamento||'—')}</td>
-                <td class="row-actions">
-                  <button class="btn btn-ghost btn-sm" data-act="whats" data-id="${r.id}">
-                    <i class="fab fa-whatsapp" style="color:#25d366"></i> WhatsApp
-                  </button>
-                  <button class="btn btn-danger btn-sm" data-act="del" data-id="${r.id}">
-                    <i class="fas fa-trash"></i> Excluir
-                  </button>
-                </td>
-              </tr>`).join('') || '<tr><td colspan="7" class="empty"><i class="fas fa-clipboard-list"></i>Sem reservas.</td></tr>'}
-          </tbody>
-        </table>
-      </div>
-    </div>`;
+                <th>Cliente</th><th>Telefone</th><th>CPF</th>
+                <th>Assento</th><th>Pagamento</th><th>Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${lista.map(r=>`
+                <tr>
+                  <td>${esc(r.nome)}</td>
+                  <td>${esc(r.telefone||'—')}</td>
+                  <td>${esc(r.cpf||'—')}</td>
+                  <td>${esc(r.assento??'—')}</td>
+                  <td>${esc(r.pagamento||'—')}</td>
+                  <td class="row-actions">
+                    <button class="btn btn-ghost btn-sm" data-act="whats" data-id="${r.id}" title="WhatsApp">
+                      <i class="fab fa-whatsapp" style="color:#25d366"></i>
+                    </button>
+                    <button class="btn btn-danger btn-sm" data-act="del" data-id="${r.id}" title="Excluir">
+                      <i class="fas fa-trash"></i>
+                    </button>
+                  </td>
+                </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>`;
+  }).join('');
+
+  $('#view').querySelectorAll('[data-export]').forEach(btn=>{
+    btn.onclick = ()=>{
+      const destino = btn.dataset.export;
+      exportarCSV(grupos[destino], `reservas-${destino}`);
+    };
+  });
 
   $('#view').querySelectorAll('[data-act]').forEach(btn=>{
     const id = btn.dataset.id, act = btn.dataset.act;
@@ -744,6 +930,37 @@ async function renderReservations(){
   });
 }
 
+/* =====================================================================
+   EXPORTAR CSV
+   ===================================================================== */
+function exportarCSV(linhas, nomeArquivo){
+  if(!linhas || linhas.length === 0){
+    toast('Nada para exportar.','error');
+    return;
+  }
+  const cabecalho = ['Nome','Telefone','CPF','Destino','Assento','Pagamento'];
+  const dados = linhas.map(r=>[
+    r.nome||'', r.telefone||'', r.cpf||'', r.destino||'', r.assento??'', r.pagamento||''
+  ]);
+  const csv = [cabecalho, ...dados]
+    .map(linha => linha.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(';'))
+    .join('\r\n');
+
+  const blob = new Blob(['\uFEFF' + csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${nomeArquivo}-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Download iniciado.','success');
+}
+
+/* =====================================================================
+   AÇÕES DA RESERVA
+   ===================================================================== */
 function openWhatsApp(id){
   const r = state.data.reservations.find(x=>String(x.id)===String(id));
   if(!r) return;
@@ -760,37 +977,6 @@ async function deleteReservation(id){
   toast('Reserva excluída.','success');
   renderReservations();
 }
-
-/* =====================================================================
-   FINANCEIRO / RELATÓRIOS / CONFIGURAÇÕES
-   (mantidos; só rodam se você reativar no MENU e as tabelas existirem)
-   ===================================================================== */
-async function renderFinance(){
-  const [txRes, tripRes] = await Promise.all([
-    sb.from('financial_transactions').select('*, destinations(name)').order('transaction_date',{ascending:false}),
-    sb.from('destinations').select('id,name').order('name'),
-  ]);
-  if(txRes.error) throw txRes.error;
-  const txs = txRes.data || [];
-  state.data.transactions = txs;
-  state.data.tripList = tripRes.data || [];
-  const entradas = txs.filter(t=>t.type==='entrada').reduce((s,t)=>s+Number(t.amount||0),0);
-  const despesas = txs.filter(t=>t.type==='despesa').reduce((s,t)=>s+Number(t.amount||0),0);
-
-  $('#view').innerHTML = `
-    <div class="cards">
-      <div class="card"><div class="label">Entradas</div><div class="value success">${fmtBRL(entradas)}</div></div>
-      <div class="card"><div class="label">Despesas</div><div class="value danger">${fmtBRL(despesas)}</div></div>
-      <div class="card"><div class="label">Saldo</div><div class="value ${entradas-despesas>=0?'success':'danger'}">${fmtBRL(entradas-despesas)}</div></div>
-    </div>
-    <div class="table-wrap"><div class="table-scroll"><table>
-      <thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Viagem</th><th>Valor</th></tr></thead>
-      <tbody>${txs.map(t=>`<tr><td>${fmtDate(t.transaction_date)}</td><td><span class="badge ${t.type==='entrada'?'confirmed':'cancelled'}">${t.type}</span></td><td>${esc(t.description)}</td><td>${esc(t.destinations?.name||'—')}</td><td>${fmtBRL(t.amount)}</td></tr>`).join('')||'<tr><td colspan="5" class="empty"><i class="fas fa-inbox"></i>Sem lançamentos.</td></tr>'}</tbody>
-    </table></div></div>`;
-}
-
-async function renderReports(){ $('#view').innerHTML = '<div class="empty"><i class="fas fa-chart-pie"></i>Módulo de relatórios disponível em breve.</div>'; }
-async function renderSettings(){ $('#view').innerHTML = '<div class="empty"><i class="fas fa-gear"></i>Módulo de configurações disponível em breve.</div>'; }
 
 /* =====================================================================
    BOOT
