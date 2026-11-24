@@ -3,196 +3,405 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Painel Administrativo — Viagens</title>
+<title>Painel Administrativo — MS Turismo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
-    --bg:#0f172a; --panel:#1e293b; --panel-2:#334155; --text:#e2e8f0;
-    --muted:#94a3b8; --primary:#3b82f6; --primary-2:#2563eb;
-    --success:#10b981; --warning:#f59e0b; --danger:#ef4444;
-    --radius:10px; --shadow:0 4px 20px rgba(0,0,0,.25);
+    --blue-50:#eff6ff;
+    --blue-100:#dbeafe;
+    --blue-200:#bfdbfe;
+    --blue-500:#3b82f6;
+    --blue-600:#2563eb;
+    --blue-700:#1d4ed8;
+    --white:#ffffff;
+    --bg:#f4f7fb;
+    --panel:#ffffff;
+    --text:#0f172a;
+    --muted:#64748b;
+    --border:#e2e8f0;
+    --success:#10b981;
+    --warning:#f59e0b;
+    --danger:#ef4444;
+    --radius:14px;
+    --radius-sm:10px;
+    --shadow-sm:0 1px 2px rgba(15,23,42,.06);
+    --shadow:0 4px 20px rgba(15,23,42,.08);
+    --shadow-lg:0 20px 50px rgba(15,23,42,.12);
+    --sidebar-w:260px;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+  html,body{height:100%}
+  body{
+    font-family:'Inter',system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,h4{font-family:'Poppins',sans-serif;font-weight:600;letter-spacing:-.2px}
   button{cursor:pointer;font-family:inherit}
   input,select,textarea{font-family:inherit}
+  a{color:var(--blue-600);text-decoration:none}
+  a:hover{text-decoration:underline}
 
-  /* LOGIN */
-  #login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
-  .login-card{background:var(--panel);padding:2rem;border-radius:var(--radius);box-shadow:var(--shadow);width:100%;max-width:380px}
-  .login-card h1{font-size:1.25rem;margin-bottom:.25rem}
-  .login-card p{color:var(--muted);font-size:.85rem;margin-bottom:1.5rem}
-
-  /* CAMPOS */
-  .field{margin-bottom:1rem}
-  .field label{display:block;font-size:.8rem;color:var(--muted);margin-bottom:.35rem}
-  .field input,.field select,.field textarea{
-    width:100%;padding:.65rem .75rem;background:var(--panel-2);
-    border:1px solid #475569;border-radius:8px;color:var(--text);font-size:.9rem
+  /* ========== LOGIN ========== */
+  #login-screen{
+    display:flex;align-items:center;justify-content:center;
+    min-height:100vh;padding:1.25rem;
+    background:
+      radial-gradient(circle at 10% 10%, var(--blue-100) 0%, transparent 45%),
+      radial-gradient(circle at 90% 90%, #e0f2fe 0%, transparent 45%),
+      var(--bg);
   }
-  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--primary)}
+  .login-card{
+    background:var(--white);
+    padding:2.25rem 2rem;
+    border-radius:18px;
+    box-shadow:var(--shadow-lg);
+    width:100%;max-width:400px;
+    border:1px solid var(--border);
+  }
+  .login-brand{
+    display:flex;align-items:center;gap:.6rem;
+    margin-bottom:1.25rem;
+  }
+  .login-brand .logo{
+    width:42px;height:42px;border-radius:12px;
+    background:linear-gradient(135deg,var(--blue-500),var(--blue-700));
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:1.1rem;
+    box-shadow:0 6px 16px rgba(37,99,235,.35);
+  }
+  .login-brand strong{font-family:'Poppins',sans-serif;font-size:1.05rem}
+  .login-brand small{display:block;color:var(--muted);font-size:.75rem;font-weight:400}
+  .login-card h1{font-size:1.35rem;margin-bottom:.25rem}
+  .login-card > p{color:var(--muted);font-size:.85rem;margin-bottom:1.5rem}
 
-  /* BOTÕES */
-  .btn{padding:.65rem 1rem;border:none;border-radius:8px;font-weight:600;font-size:.9rem;transition:.15s}
-  .btn-primary{background:var(--primary);color:#fff}
-  .btn-primary:hover{background:var(--primary-2)}
-  .btn-ghost{background:transparent;color:var(--muted);border:1px solid #475569}
-  .btn-ghost:hover{color:var(--text);border-color:var(--muted)}
+  .field{margin-bottom:1rem}
+  .field label{display:block;font-size:.8rem;color:var(--text);font-weight:500;margin-bottom:.4rem}
+  .field input,.field select,.field textarea{
+    width:100%;padding:.7rem .85rem;
+    background:var(--white);
+    border:1.5px solid var(--border);
+    border-radius:var(--radius-sm);
+    color:var(--text);font-size:.9rem;
+    transition:border-color .15s, box-shadow .15s;
+  }
+  .field input:focus,.field select:focus,.field textarea:focus{
+    outline:none;border-color:var(--blue-500);
+    box-shadow:0 0 0 3px rgba(59,130,246,.15);
+  }
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
+    padding:.7rem 1.1rem;border:none;border-radius:var(--radius-sm);
+    font-weight:600;font-size:.9rem;transition:.15s;white-space:nowrap;
+  }
+  .btn:disabled{opacity:.6;cursor:not-allowed}
+  .btn-primary{background:var(--blue-600);color:#fff;box-shadow:0 4px 12px rgba(37,99,235,.25)}
+  .btn-primary:hover:not(:disabled){background:var(--blue-700)}
+  .btn-ghost{background:var(--white);color:var(--text);border:1.5px solid var(--border)}
+  .btn-ghost:hover:not(:disabled){border-color:var(--blue-200);background:var(--blue-50)}
   .btn-danger{background:var(--danger);color:#fff}
-  .btn-success{background:var(--success);color:#fff}
-  .btn-sm{padding:.4rem .7rem;font-size:.78rem}
+  .btn-danger:hover:not(:disabled){background:#dc2626}
+  .btn-sm{padding:.45rem .75rem;font-size:.8rem;border-radius:8px}
   .btn-block{width:100%}
+  .btn-icon{
+    width:38px;height:38px;padding:0;border-radius:10px;
+    background:var(--white);border:1.5px solid var(--border);color:var(--text);
+  }
+  .btn-icon:hover{border-color:var(--blue-200);background:var(--blue-50)}
+
   .error-msg{color:var(--danger);font-size:.8rem;margin-top:.5rem;min-height:1.1rem;word-break:break-word}
 
-  /* LAYOUT */
+  /* ========== APP LAYOUT ========== */
   #app{display:none;min-height:100vh}
-  .layout{display:grid;grid-template-columns:240px 1fr;min-height:100vh}
+  .layout{display:grid;grid-template-columns:var(--sidebar-w) 1fr;min-height:100vh}
 
-  /* SIDEBAR */
   aside{
-    background:var(--panel);border-right:1px solid #334155;
-    padding:1.25rem 0;display:flex;flex-direction:column;
-    position:sticky;top:0;height:100vh;overflow-y:auto;
+    background:var(--white);
+    border-right:1px solid var(--border);
+    padding:1.25rem 1rem;
+    display:flex;flex-direction:column;
+    position:sticky;top:0;height:100vh;
+    z-index:30;
   }
-  .brand{padding:0 1.25rem 1rem;font-weight:700;font-size:1.05rem;border-bottom:1px solid #334155;margin-bottom:.75rem}
-  .brand small{display:block;font-weight:400;font-size:.7rem;color:var(--muted);margin-top:.2rem}
-  nav{display:flex;flex-direction:column;gap:.2rem;padding:0 .5rem;flex:1}
+  .brand{
+    display:flex;align-items:center;gap:.6rem;
+    padding:0 .25rem 1rem;
+    border-bottom:1px solid var(--border);
+    margin-bottom:1rem;
+  }
+  .brand .logo{
+    width:40px;height:40px;border-radius:11px;
+    background:linear-gradient(135deg,var(--blue-500),var(--blue-700));
+    display:flex;align-items:center;justify-content:center;
+    color:#fff;font-size:1rem;flex-shrink:0;
+    box-shadow:0 6px 16px rgba(37,99,235,.3);
+  }
+  .brand strong{font-family:'Poppins',sans-serif;font-size:.95rem;line-height:1.2}
+  .brand small{display:block;color:var(--muted);font-size:.7rem;font-weight:400}
+
+  nav{display:flex;flex-direction:column;gap:.25rem;flex:1;overflow-y:auto}
   .nav-item{
-    display:flex;align-items:center;gap:.6rem;padding:.6rem .75rem;border-radius:8px;
-    color:var(--muted);background:transparent;border:none;text-align:left;font-size:.88rem;width:100%
+    display:flex;align-items:center;gap:.75rem;
+    padding:.65rem .85rem;border-radius:10px;
+    color:var(--muted);background:transparent;border:none;
+    text-align:left;font-size:.88rem;font-weight:500;width:100%;
+    transition:.15s;
   }
-  .nav-item:hover{background:var(--panel-2);color:var(--text)}
-  .nav-item.active{background:var(--primary);color:#fff}
-  .nav-item .icon{width:18px;text-align:center;flex-shrink:0}
-  .user-box{padding:1rem 1.25rem 0;border-top:1px solid #334155;margin-top:.75rem;font-size:.78rem}
-  .user-box .role{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em}
-  .user-box button{margin-top:.6rem;width:100%}
-  #user-email{word-break:break-all;font-size:.78rem}
+  .nav-item .icon{
+    width:22px;text-align:center;font-size:.95rem;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .nav-item:hover{background:var(--blue-50);color:var(--blue-700)}
+  .nav-item.active{background:var(--blue-600);color:#fff;box-shadow:0 4px 12px rgba(37,99,235,.25)}
+  .nav-item.active .icon{color:#fff}
 
-  /* MAIN */
-  main{padding:1.5rem 2rem;overflow:auto;min-width:0}
-  .page-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem}
-  .page-header h2{font-size:1.35rem}
+  .user-box{
+    padding:1rem .25rem 0;
+    border-top:1px solid var(--border);
+    margin-top:.75rem;
+    font-size:.8rem;
+  }
+  .user-box .email{font-weight:600;color:var(--text);word-break:break-all;font-size:.82rem}
+  .user-box .role{
+    display:inline-block;margin-top:.35rem;
+    background:var(--blue-50);color:var(--blue-700);
+    font-size:.68rem;font-weight:700;
+    text-transform:uppercase;letter-spacing:.06em;
+    padding:.2rem .55rem;border-radius:999px;
+  }
+  .user-box button{margin-top:.75rem;width:100%}
+
+  main{padding:1.75rem 2rem;overflow:auto;min-width:0}
+
+  .page-header{
+    display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:1.5rem;flex-wrap:wrap;gap:.75rem;
+  }
+  .page-header .left{display:flex;align-items:center;gap:.75rem;min-width:0}
+  .page-header h2{font-size:1.5rem;line-height:1.2}
   .page-header .sub{color:var(--muted);font-size:.85rem;margin-top:.15rem}
+  #page-actions{display:flex;gap:.5rem;flex-wrap:wrap}
 
-  /* CARDS */
-  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;margin-bottom:2rem}
-  .card{background:var(--panel);border:1px solid #334155;border-radius:var(--radius);padding:1.1rem}
-  .card .label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
-  .card .value{font-size:1.5rem;font-weight:700;margin-top:.35rem;word-break:break-word}
+  .mobile-menu-btn{
+    display:none;
+    background:var(--white);border:1.5px solid var(--border);
+    color:var(--text);padding:0;width:40px;height:40px;
+    border-radius:10px;align-items:center;justify-content:center;
+    font-size:1rem;flex-shrink:0;
+  }
+  .mobile-menu-btn:hover{border-color:var(--blue-200);background:var(--blue-50)}
+
+  /* ========== CARDS ========== */
+  .cards{
+    display:grid;
+    grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+    gap:1rem;margin-bottom:1.75rem;
+  }
+  .card{
+    background:var(--white);border:1px solid var(--border);
+    border-radius:var(--radius);padding:1.15rem 1.25rem;
+    box-shadow:var(--shadow-sm);
+    transition:transform .15s, box-shadow .15s;
+  }
+  .card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+  .card .label{
+    font-size:.72rem;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.06em;
+    font-weight:600;
+  }
+  .card .value{font-family:'Poppins',sans-serif;font-size:1.75rem;font-weight:700;margin-top:.4rem;color:var(--text)}
   .card .value.success{color:var(--success)}
   .card .value.danger{color:var(--danger)}
   .card .value.warning{color:var(--warning)}
+  .card .value.blue{color:var(--blue-600)}
 
-  /* TABELAS */
-  .table-wrap{background:var(--panel);border:1px solid #334155;border-radius:var(--radius);overflow-x:auto;-webkit-overflow-scrolling:touch}
-  table{width:100%;border-collapse:collapse;font-size:.85rem;min-width:640px}
-  th,td{padding:.7rem .9rem;text-align:left;border-bottom:1px solid #334155;white-space:nowrap}
-  th{background:var(--panel-2);font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+  /* ========== TABELAS ========== */
+  .table-wrap{
+    background:var(--white);border:1px solid var(--border);
+    border-radius:var(--radius);overflow:hidden;
+    box-shadow:var(--shadow-sm);
+  }
+  .table-scroll{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:.86rem;min-width:640px}
+  th,td{padding:.85rem 1rem;text-align:left;border-bottom:1px solid var(--border)}
+  th{
+    background:var(--blue-50);
+    font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;
+    color:var(--blue-700);font-weight:700;
+    position:sticky;top:0;
+  }
   tr:last-child td{border-bottom:none}
-  td:last-child{white-space:normal}
+  tbody tr:hover{background:#fafcff}
 
-  /* BADGES */
-  .badge{display:inline-block;padding:.2rem .55rem;border-radius:999px;font-size:.7rem;font-weight:600;white-space:nowrap}
-  .badge.pending{background:#78350f;color:#fcd34d}
-  .badge.confirmed{background:#065f46;color:#6ee7b7}
-  .badge.cancelled{background:#7f1d1d;color:#fca5a5}
-  .badge.paid{background:#065f46;color:#6ee7b7}
-  .badge.published{background:#1e3a8a;color:#93c5fd}
-  .badge.unpublished{background:#374151;color:#9ca3af}
+  .badge{
+    display:inline-block;padding:.22rem .6rem;border-radius:999px;
+    font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+  }
+  .badge.pending{background:#fef3c7;color:#92400e}
+  .badge.confirmed{background:#d1fae5;color:#065f46}
+  .badge.cancelled{background:#fee2e2;color:#991b1b}
+  .badge.paid{background:#d1fae5;color:#065f46}
+  .badge.published{background:var(--blue-100);color:var(--blue-700)}
+  .badge.unpublished{background:#f1f5f9;color:#475569}
 
-  /* MODAL */
-  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;padding:1rem;z-index:50}
-  .modal-backdrop.open{display:flex}
-  .modal{background:var(--panel);border-radius:var(--radius);width:100%;max-width:560px;max-height:90vh;overflow:auto;box-shadow:var(--shadow)}
-  .modal-header{padding:1.1rem 1.25rem;border-bottom:1px solid #334155;display:flex;justify-content:space-between;align-items:center}
+  .row-actions{display:flex;gap:.35rem;flex-wrap:wrap}
+  .thumb{width:52px;height:36px;object-fit:cover;border-radius:6px;border:1px solid var(--border)}
+
+  /* ========== MODAL ========== */
+  .modal-backdrop{
+    position:fixed;inset:0;background:rgba(15,23,42,.45);
+    backdrop-filter:blur(3px);
+    display:none;align-items:center;justify-content:center;
+    padding:1rem;z-index:50;
+  }
+  .modal-backdrop.open{display:flex;animation:fadeIn .18s ease}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .modal{
+    background:var(--white);border-radius:16px;
+    width:100%;max-width:560px;max-height:90vh;overflow:auto;
+    box-shadow:var(--shadow-lg);
+    animation:pop .2s ease;
+  }
+  @keyframes pop{from{transform:scale(.97);opacity:0}to{transform:scale(1);opacity:1}}
+  .modal-header{
+    padding:1.1rem 1.35rem;border-bottom:1px solid var(--border);
+    display:flex;justify-content:space-between;align-items:center;
+    position:sticky;top:0;background:var(--white);z-index:2;
+    border-radius:16px 16px 0 0;
+  }
   .modal-header h3{font-size:1rem}
-  .modal-body{padding:1.25rem}
-  .modal-footer{padding:1rem 1.25rem;border-top:1px solid #334155;display:flex;justify-content:flex-end;gap:.5rem;flex-wrap:wrap}
-  .close-x{background:none;border:none;color:var(--muted);font-size:1.3rem;line-height:1}
+  .modal-body{padding:1.35rem}
+  .modal-footer{
+    padding:1rem 1.35rem;border-top:1px solid var(--border);
+    display:flex;justify-content:flex-end;gap:.5rem;
+  }
+  .close-x{
+    background:transparent;border:none;color:var(--muted);
+    font-size:1.4rem;line-height:1;width:34px;height:34px;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .close-x:hover{background:var(--bg);color:var(--text)}
 
-  /* TOAST */
-  #toast-container{position:fixed;top:1rem;right:1rem;left:auto;display:flex;flex-direction:column;gap:.5rem;z-index:100;max-width:calc(100vw - 2rem)}
-  .toast{padding:.75rem 1rem;border-radius:8px;font-size:.85rem;color:#fff;box-shadow:var(--shadow);animation:slide .2s ease}
+  /* ========== TOAST ========== */
+  #toast-container{
+    position:fixed;top:1rem;right:1rem;
+    display:flex;flex-direction:column;gap:.5rem;z-index:100;
+    pointer-events:none;
+  }
+  .toast{
+    padding:.8rem 1.1rem;border-radius:10px;font-size:.85rem;font-weight:500;
+    color:#fff;box-shadow:var(--shadow);animation:slideIn .25s ease;
+    pointer-events:auto;max-width:340px;
+  }
   .toast.success{background:var(--success)}
   .toast.error{background:var(--danger)}
-  .toast.info{background:var(--primary)}
-  @keyframes slide{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+  .toast.info{background:var(--blue-600)}
+  @keyframes slideIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
 
-  .empty{text-align:center;padding:2rem;color:var(--muted);font-size:.85rem}
-  .row-actions{display:flex;gap:.35rem;flex-wrap:wrap}
-  .thumb{width:48px;height:32px;object-fit:cover;border-radius:4px}
+  .empty{
+    text-align:center;padding:2.5rem 1rem;
+    color:var(--muted);font-size:.9rem;
+  }
+  .empty i{font-size:2rem;color:var(--blue-200);display:block;margin-bottom:.5rem}
+
   .form-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
 
-  /* MOBILE */
-  .mobile-menu-btn{display:none;background:var(--panel-2);border:none;color:var(--text);padding:.5rem .7rem;border-radius:8px;margin-right:.5rem;font-size:1.1rem}
-  .sidebar-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:39}
-
-  @media (max-width: 900px){
-    .layout{grid-template-columns:1fr}
-    aside{position:fixed;left:-280px;top:0;bottom:0;width:260px;z-index:40;transition:left .25s ease;height:100vh}
-    aside.open{left:0}
-    .sidebar-overlay.open{display:block}
-    main{padding:1rem .75rem}
-    .mobile-menu-btn{display:inline-flex;align-items:center;justify-content:center}
-    .page-header h2{font-size:1.15rem}
-    .page-header .sub{font-size:.78rem}
-    .cards{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.65rem}
-    .card{padding:.85rem}
-    .card .value{font-size:1.25rem}
-    .form-row{grid-template-columns:1fr}
-    .modal{max-width:100%;max-height:95vh}
-    .modal-body{padding:1rem}
-    .modal-footer{padding:.85rem 1rem}
-    #toast-container{top:auto;bottom:1rem;right:1rem;left:1rem}
-    @keyframes slide{from{transform:translateY(100%);opacity:0}to{transform:translateY(0);opacity:1}}
+  /* ========== RESPONSIVO ========== */
+  .sidebar-backdrop{
+    display:none;position:fixed;inset:0;background:rgba(15,23,42,.45);
+    z-index:25;
   }
-
-  @media (max-width: 480px){
-    .cards{grid-template-columns:1fr 1fr}
-    .card .value{font-size:1.1rem}
-    .btn-sm{padding:.45rem .6rem;font-size:.72rem}
-    .row-actions{gap:.25rem}
+  @media(max-width:900px){
+    .layout{grid-template-columns:1fr}
+    aside{
+      position:fixed;left:calc(-1 * var(--sidebar-w) - 20px);top:0;bottom:0;
+      width:var(--sidebar-w);transition:left .25s ease;
+      box-shadow:var(--shadow-lg);
+    }
+    aside.open{left:0}
+    .sidebar-backdrop.open{display:block}
+    main{padding:1.15rem}
+    .mobile-menu-btn{display:flex}
+    .page-header h2{font-size:1.25rem}
+    .form-row{grid-template-columns:1fr}
+  }
+  @media(max-width:560px){
+    .cards{grid-template-columns:1fr 1fr;gap:.75rem}
+    .card{padding:.9rem 1rem}
+    .card .value{font-size:1.4rem}
+    main{padding:1rem .85rem}
+    .page-header{margin-bottom:1.1rem}
+    .page-header h2{font-size:1.15rem}
+    #toast-container{left:.75rem;right:.75rem;top:.75rem}
+    .toast{max-width:none}
   }
 </style>
 </head>
 <body>
 
+<!-- ========== LOGIN ========== -->
 <div id="login-screen">
   <div class="login-card">
-    <h1>Painel Administrativo</h1>
+    <div class="login-brand">
+      <div class="logo"><i class="fas fa-bus"></i></div>
+      <div>
+        <strong>MS Turismo</strong>
+        <small>Painel Administrativo</small>
+      </div>
+    </div>
+    <h1>Bem-vindo de volta</h1>
     <p>Acesse com suas credenciais autorizadas.</p>
     <form id="login-form">
       <div class="field">
-        <label>E-mail</label>
-        <input type="email" id="login-email" required autocomplete="username" />
+        <label for="login-email">E-mail</label>
+        <input type="email" id="login-email" required autocomplete="username" placeholder="voce@email.com" />
       </div>
       <div class="field">
-        <label>Senha</label>
-        <input type="password" id="login-password" required autocomplete="current-password" />
+        <label for="login-password">Senha</label>
+        <input type="password" id="login-password" required autocomplete="current-password" placeholder="••••••••" />
       </div>
-      <button type="submit" class="btn btn-primary btn-block" id="login-btn">Entrar</button>
+      <button type="submit" class="btn btn-primary btn-block" id="login-btn">
+        <i class="fas fa-right-to-bracket"></i> Entrar
+      </button>
       <div class="error-msg" id="login-error"></div>
     </form>
   </div>
 </div>
 
+<!-- ========== APP ========== -->
 <div id="app">
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
   <div class="layout">
     <aside id="sidebar">
-      <div class="brand">Painel Viagens<small>Administração</small></div>
+      <div class="brand">
+        <div class="logo"><i class="fas fa-bus"></i></div>
+        <div>
+          <strong>MS Turismo</strong>
+          <small>Administração</small>
+        </div>
+      </div>
       <nav id="nav"></nav>
       <div class="user-box">
-        <div id="user-email">—</div>
+        <div class="email" id="user-email">—</div>
         <div class="role" id="user-role">—</div>
-        <button class="btn btn-ghost btn-sm" id="logout-btn">Sair</button>
+        <button class="btn btn-ghost btn-sm" id="logout-btn">
+          <i class="fas fa-right-from-bracket"></i> Sair
+        </button>
       </div>
     </aside>
-    <div class="sidebar-overlay" id="sidebar-overlay"></div>
     <main>
       <div class="page-header">
-        <div style="display:flex;align-items:center">
-          <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+        <div class="left">
+          <button class="mobile-menu-btn" id="mobile-menu-btn" aria-label="Abrir menu">
+            <i class="fas fa-bars"></i>
+          </button>
           <div>
             <h2 id="page-title">Dashboard</h2>
             <div class="sub" id="page-sub">Visão geral</div>
@@ -205,11 +414,12 @@
   </div>
 </div>
 
+<!-- ========== MODAL ========== -->
 <div class="modal-backdrop" id="modal-backdrop">
   <div class="modal">
     <div class="modal-header">
       <h3 id="modal-title">—</h3>
-      <button class="close-x" id="modal-close">×</button>
+      <button class="close-x" id="modal-close" aria-label="Fechar"><i class="fas fa-xmark"></i></button>
     </div>
     <div class="modal-body" id="modal-body"></div>
     <div class="modal-footer" id="modal-footer"></div>
@@ -224,7 +434,9 @@
    ===================================================================== */
 const SUPABASE_URL = 'https://xskuytsfwplrqhldwhhe.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhza3V5dHNmd3BscnFobGR3aGhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQzMzg1NjIsImV4cCI6MjEwOTkxNDU2Mn0.yU582BL2vQRriWN4wiQLcQ07KiRjMJAOtnjPEykcwjc';
-const BUCKET_IMAGES = 'trip-images';
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const state = { user:null, role:null, permissions:[], currentPage:'dashboard', data:{} };
 
 /* =====================================================================
    PERMISSÕES
@@ -236,20 +448,17 @@ const ROLE_PERMISSIONS = {
   visualizador:['dashboard','trips','reservations','reports'],
 };
 
+/* Abas ativas no menu. Financeiro/Relatórios/Configurações estão comentadas
+   porque dependem de tabelas que ainda não existem no seu Supabase.
+   Para reativar, remova o "//" das linhas correspondentes. */
 const MENU = [
-  { key:'dashboard',    label:'Dashboard',      icon:'📊', title:'Dashboard',      sub:'Visão geral' },
-  { key:'trips',        label:'Viagens',        icon:'✈️', title:'Viagens',        sub:'Gerenciar destinos' },
-  { key:'reservations', label:'Reservas',       icon:'📋', title:'Reservas',       sub:'Solicitações de clientes' },
-  { key:'finance',      label:'Financeiro',     icon:'💰', title:'Financeiro',     sub:'Entradas, despesas e saldo' },
-  { key:'reports',      label:'Relatórios',     icon:'📈', title:'Relatórios',     sub:'Consultas e exportações' },
-  { key:'settings',     label:'Configurações',  icon:'⚙️', title:'Configurações',  sub:'Painel e usuários' },
+  { key:'dashboard',    label:'Dashboard', icon:'fa-chart-line',      title:'Dashboard', sub:'Visão geral' },
+  { key:'trips',        label:'Viagens',   icon:'fa-route',           title:'Viagens',   sub:'Destinos cadastrados' },
+  { key:'reservations', label:'Reservas',  icon:'fa-clipboard-list',  title:'Reservas',  sub:'Solicitações de clientes' },
+  // { key:'finance',   label:'Financeiro', icon:'fa-wallet',          title:'Financeiro', sub:'Entradas, despesas e saldo' },
+  // { key:'reports',   label:'Relatórios', icon:'fa-chart-pie',       title:'Relatórios', sub:'Consultas e exportações' },
+  // { key:'settings',  label:'Configurações', icon:'fa-gear',         title:'Configurações', sub:'Painel e usuários' },
 ];
-
-/* =====================================================================
-   CLIENTE SUPABASE (variável 'sb' para não colidir com a global do CDN)
-   ===================================================================== */
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const state = { user:null, role:null, permissions:[], currentPage:'dashboard', data:{} };
 
 /* =====================================================================
    HELPERS
@@ -262,7 +471,7 @@ const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>
 function toast(msg, type='info'){
   const el = document.createElement('div');
   el.className = `toast ${type}`;
-  el.textContent = msg;
+  el.innerHTML = `<i class="fas ${type==='success'?'fa-circle-check':type==='error'?'fa-circle-exclamation':'fa-circle-info'}"></i> ${esc(msg)}`;
   $('#toast-container').appendChild(el);
   setTimeout(()=>el.remove(), 4000);
 }
@@ -280,9 +489,8 @@ $('#modal-close').onclick = closeModal;
 $('#modal-backdrop').addEventListener('click', e=>{ if(e.target.id==='modal-backdrop') closeModal(); });
 
 async function logActivity(action, description){
-  try{
-    await sb.from('activity_logs').insert({ user_id: state.user.id, action, description });
-  }catch(e){ console.warn('log falhou:', e); }
+  try{ await sb.from('activity_logs').insert({ user_id: state.user.id, action, description }); }
+  catch(e){ /* tabela pode não existir; ignora */ }
 }
 
 /* =====================================================================
@@ -294,62 +502,39 @@ $('#login-form').addEventListener('submit', async e=>{
   const btn = $('#login-btn');
   errEl.textContent = '';
   btn.disabled = true;
-  btn.textContent = 'Entrando…';
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando…';
 
   const email = $('#login-email').value.trim();
   const password = $('#login-password').value;
 
   try {
-    console.log('[1/3] Autenticando...');
     const { data: authData, error: authError } = await sb.auth.signInWithPassword({ email, password });
 
     if (authError) {
-      console.error('[1/3] authError:', authError);
-      if (authError.message.includes('Invalid login')) {
-        errEl.textContent = 'E-mail ou senha incorretos.';
-      } else if (authError.message.includes('Email not confirmed')) {
-        errEl.textContent = 'E-mail não confirmado. Confirme em Authentication → Users.';
-      } else {
-        errEl.textContent = 'Erro no login: ' + authError.message;
-      }
+      if (authError.message.includes('Invalid login')) errEl.textContent = 'E-mail ou senha incorretos.';
+      else if (authError.message.includes('Email not confirmed')) errEl.textContent = 'E-mail não confirmado. Confirme em Authentication → Users.';
+      else errEl.textContent = 'Erro no login: ' + authError.message;
       return;
     }
-    console.log('[1/3] ok. user id:', authData.user.id);
 
-    console.log('[2/3] Buscando role em admin_users...');
     const { data: adminRow, error: adminError } = await sb
-      .from('admin_users')
-      .select('role')
-      .eq('user_id', authData.user.id)
-      .maybeSingle();
+      .from('admin_users').select('role').eq('user_id', authData.user.id).maybeSingle();
 
     if (adminError) {
-      console.error('[2/3] adminError:', adminError);
-      errEl.textContent = 'Erro ao ler admin_users: ' + adminError.message +
-        ' (verifique RLS e se a tabela tem a linha com user_id correto)';
-      await sb.auth.signOut();
-      return;
+      errEl.textContent = 'Erro ao ler admin_users: ' + adminError.message;
+      await sb.auth.signOut(); return;
     }
-
     if (!adminRow) {
-      console.error('[2/3] adminRow vazio. user_id consultado:', authData.user.id);
-      errEl.textContent =
-        'Usuário autenticado, mas NÃO está em admin_users. ' +
-        'Insira: insert into admin_users(user_id,role) values (\'' +
-        authData.user.id + '\',\'owner\');';
-      await sb.auth.signOut();
-      return;
+      errEl.textContent = 'Usuário autenticado, mas NÃO está em admin_users. Insira: insert into admin_users(user_id,role) values (\'' + authData.user.id + '\',\'owner\');';
+      await sb.auth.signOut(); return;
     }
 
-    console.log('[2/3] ok. role:', adminRow.role);
     const perms = ROLE_PERMISSIONS[adminRow.role];
     if (!perms) {
-      errEl.textContent = 'Role desconhecida: "' + adminRow.role + '". Use owner/admin/financeiro/visualizador.';
-      await sb.auth.signOut();
-      return;
+      errEl.textContent = 'Role desconhecida: "' + adminRow.role + '".';
+      await sb.auth.signOut(); return;
     }
 
-    console.log('[3/3] Entrando no painel...');
     state.user = authData.user;
     state.role = adminRow.role;
     state.permissions = perms;
@@ -363,11 +548,10 @@ $('#login-form').addEventListener('submit', async e=>{
     navigate('dashboard');
 
   } catch (err) {
-    console.error('Erro inesperado no login:', err);
     errEl.textContent = 'Erro inesperado: ' + err.message;
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Entrar';
+    btn.innerHTML = '<i class="fas fa-right-to-bracket"></i> Entrar';
   }
 });
 
@@ -376,6 +560,9 @@ $('#logout-btn').addEventListener('click', async ()=>{
   location.reload();
 });
 
+/* =====================================================================
+   NAVEGAÇÃO
+   ===================================================================== */
 function renderNav(){
   const nav = $('#nav');
   nav.innerHTML = '';
@@ -383,32 +570,22 @@ function renderNav(){
     if(!can(item.key)) return;
     const btn = document.createElement('button');
     btn.className = 'nav-item' + (state.currentPage===item.key?' active':'');
-    btn.innerHTML = `<span class="icon">${item.icon}</span> ${item.label}`;
+    btn.innerHTML = `<span class="icon"><i class="fas ${item.icon}"></i></span> ${item.label}`;
     btn.onclick = ()=>{ navigate(item.key); closeSidebar(); };
     nav.appendChild(btn);
   });
 }
 
-/* =====================================================================
-   MOBILE SIDEBAR
-   ===================================================================== */
-function openSidebar(){
-  $('#sidebar').classList.add('open');
-  $('#sidebar-overlay').classList.add('open');
-}
 function closeSidebar(){
   $('#sidebar').classList.remove('open');
-  $('#sidebar-overlay').classList.remove('open');
+  $('#sidebar-backdrop').classList.remove('open');
 }
 $('#mobile-menu-btn').onclick = ()=>{
-  const s = $('#sidebar');
-  if (s.classList.contains('open')) closeSidebar(); else openSidebar();
+  $('#sidebar').classList.add('open');
+  $('#sidebar-backdrop').classList.add('open');
 };
-$('#sidebar-overlay').onclick = closeSidebar;
+$('#sidebar-backdrop').onclick = closeSidebar;
 
-/* =====================================================================
-   NAVEGAÇÃO
-   ===================================================================== */
 async function navigate(page){
   if(!can(page)){
     toast('Sem permissão para acessar este módulo.','error');
@@ -420,7 +597,7 @@ async function navigate(page){
   $('#page-title').textContent = item.title;
   $('#page-sub').textContent = item.sub;
   $('#page-actions').innerHTML = '';
-  $('#view').innerHTML = '<div class="empty">Carregando…</div>';
+  $('#view').innerHTML = '<div class="empty"><i class="fas fa-spinner fa-spin"></i>Carregando…</div>';
 
   try{
     if(page==='dashboard')    await renderDashboard();
@@ -431,275 +608,164 @@ async function navigate(page){
     if(page==='settings')     await renderSettings();
   }catch(err){
     console.error('Erro em', page, err);
-    $('#view').innerHTML = `<div class="empty">Erro ao carregar: ${esc(err.message)}</div>`;
+    $('#view').innerHTML = `<div class="empty"><i class="fas fa-triangle-exclamation"></i>Erro ao carregar: ${esc(err.message)}</div>`;
   }
 }
 
 /* =====================================================================
-   DASHBOARD
+   DASHBOARD — 'reservas' + 'viagens'
    ===================================================================== */
 async function renderDashboard(){
-  const [resRes, tripRes, txRes] = await Promise.all([
-    sb.from('reservations').select('id,reservation_status,total_amount,created_at'),
-    sb.from('destinations').select('id,is_active'),
-    sb.from('financial_transactions').select('type,amount'),
+  const [resRes, tripRes] = await Promise.all([
+    sb.from('reservas').select('id,nome,destino,assento,pagamento'),
+    sb.from('viagens').select('id,nome,data_inicio,data_fim,preco'),
   ]);
-  if(resRes.error) console.warn('reservations:', resRes.error);
-  if(tripRes.error) console.warn('destinations:', tripRes.error);
-  if(txRes.error) console.warn('finance:', txRes.error);
+  if(resRes.error) console.warn('reservas:', resRes.error);
+  if(tripRes.error) console.warn('viagens:', tripRes.error);
 
-  const reservations = resRes.data || [];
-  const trips = tripRes.data || [];
-  const txs = txRes.data || [];
-
-  const pending = reservations.filter(r=>r.reservation_status==='pending').length;
-  const confirmed = reservations.filter(r=>r.reservation_status==='confirmed').length;
-  const activeTrips = trips.filter(t=>t.is_active).length;
-  const entradas = txs.filter(t=>t.type==='entrada').reduce((s,t)=>s+Number(t.amount||0),0);
-  const despesas = txs.filter(t=>t.type==='despesa').reduce((s,t)=>s+Number(t.amount||0),0);
-  const saldo = entradas - despesas;
+  const reservas = resRes.data || [];
+  const viagens = tripRes.data || [];
 
   $('#view').innerHTML = `
     <div class="cards">
-      <div class="card"><div class="label">Total de reservas</div><div class="value">${reservations.length}</div></div>
-      <div class="card"><div class="label">Pendentes</div><div class="value warning">${pending}</div></div>
-      <div class="card"><div class="label">Confirmadas</div><div class="value success">${confirmed}</div></div>
-      <div class="card"><div class="label">Viagens ativas</div><div class="value">${activeTrips}</div></div>
-      <div class="card"><div class="label">Entradas</div><div class="value success">${fmtBRL(entradas)}</div></div>
-      <div class="card"><div class="label">Despesas</div><div class="value danger">${fmtBRL(despesas)}</div></div>
-      <div class="card"><div class="label">Saldo</div><div class="value ${saldo>=0?'success':'danger'}">${fmtBRL(saldo)}</div></div>
+      <div class="card">
+        <div class="label">Total de reservas</div>
+        <div class="value blue">${reservas.length}</div>
+      </div>
+      <div class="card">
+        <div class="label">Viagens cadastradas</div>
+        <div class="value">${viagens.length}</div>
+      </div>
     </div>
     <div class="table-wrap">
-      <table>
-        <thead><tr><th>Últimas reservas</th><th>Status</th><th>Valor</th><th>Data</th></tr></thead>
-        <tbody>
-          ${reservations.slice(0,5).map(r=>`
-            <tr><td>#${String(r.id).slice(0,8)}</td><td><span class="badge ${r.reservation_status}">${r.reservation_status}</span></td><td>${fmtBRL(r.total_amount)}</td><td>${fmtDate(r.created_at)}</td></tr>
-          `).join('') || '<tr><td colspan="4" class="empty">Sem reservas ainda.</td></tr>'}
-        </tbody>
-      </table>
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Cliente</th><th>Destino</th><th>Assento</th><th>Pagamento</th></tr></thead>
+          <tbody>
+            ${reservas.slice(0,5).map(r=>`
+              <tr>
+                <td>${esc(r.nome)}</td>
+                <td>${esc(r.destino||'—')}</td>
+                <td>${esc(r.assento??'—')}</td>
+                <td>${esc(r.pagamento||'—')}</td>
+              </tr>
+            `).join('') || '<tr><td colspan="4" class="empty"><i class="fas fa-inbox"></i>Sem reservas ainda.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
     </div>`;
 }
 
 /* =====================================================================
-   VIAGENS
+   VIAGENS — 'viagens'
    ===================================================================== */
 async function renderTrips(){
-  $('#page-actions').innerHTML = `<button class="btn btn-primary" id="new-trip-btn">+ Nova viagem</button>`;
-  const { data, error } = await sb.from('destinations').select('*').order('created_at',{ascending:false});
+  const { data, error } = await sb.from('viagens').select('*').order('data_inicio',{ascending:false});
   if(error) throw error;
   state.data.trips = data || [];
 
   $('#view').innerHTML = `
-    <div class="table-wrap"><table>
-      <thead><tr><th>Imagem</th><th>Destino</th><th>Saída</th><th>Retorno</th><th>Preço</th><th>Status</th><th>Ações</th></tr></thead>
-      <tbody>
-        ${state.data.trips.map(t=>`
-          <tr>
-            <td>${t.image_url?`<img class="thumb" src="${esc(t.image_url)}" alt="">`:'—'}</td>
-            <td>${esc(t.name)}</td>
-            <td>${fmtDate(t.departure_date)}</td>
-            <td>${fmtDate(t.return_date)}</td>
-            <td>${fmtBRL(t.price)}</td>
-            <td><span class="badge ${t.is_active?'published':'unpublished'}">${t.is_active?'Publicado':'Não publicado'}</span></td>
-            <td class="row-actions">
-              <button class="btn btn-ghost btn-sm" data-act="edit" data-id="${t.id}">Editar</button>
-              <button class="btn btn-ghost btn-sm" data-act="toggle" data-id="${t.id}">${t.is_active?'Despublicar':'Publicar'}</button>
-              <button class="btn btn-danger btn-sm" data-act="del" data-id="${t.id}">Excluir</button>
-            </td>
-          </tr>`).join('') || '<tr><td colspan="7" class="empty">Nenhuma viagem cadastrada.</td></tr>'}
-      </tbody>
-    </table></div>`;
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Imagem</th><th>Destino</th><th>Saída</th><th>Retorno</th><th>Preço</th><th>Ações</th></tr></thead>
+          <tbody>
+            ${state.data.trips.map(t=>`
+              <tr>
+                <td>${t.imagem?`<img class="thumb" src="${esc(t.imagem)}" alt="">`:'—'}</td>
+                <td>${esc(t.nome)}</td>
+                <td>${fmtDate(t.data_inicio)}</td>
+                <td>${fmtDate(t.data_fim)}</td>
+                <td>${fmtBRL(t.preco)}</td>
+                <td class="row-actions">
+                  <button class="btn btn-danger btn-sm" data-act="del" data-id="${t.id}">
+                    <i class="fas fa-trash"></i> Excluir
+                  </button>
+                </td>
+              </tr>`).join('') || '<tr><td colspan="6" class="empty"><i class="fas fa-route"></i>Nenhuma viagem cadastrada.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
 
-  $('#new-trip-btn')?.addEventListener('click', ()=> openTripForm());
-  $('#view').querySelectorAll('[data-act]').forEach(btn=>{
-    const id = btn.dataset.id, act = btn.dataset.act;
+  $('#view').querySelectorAll('[data-act="del"]').forEach(btn=>{
     btn.onclick = async ()=>{
-      if(act==='edit') openTripForm(id);
-      if(act==='toggle') await toggleTrip(id);
-      if(act==='del') await deleteTrip(id);
+      if(!confirm('Excluir esta viagem?')) return;
+      const { error } = await sb.from('viagens').delete().eq('id', btn.dataset.id);
+      if(error){ toast('Erro: '+error.message,'error'); return; }
+      toast('Viagem excluída.','success');
+      renderTrips();
     };
   });
 }
 
-function openTripForm(id=null){
-  const trip = id ? state.data.trips.find(t=>t.id===id) : null;
-  openModal(trip?'Editar viagem':'Nova viagem', `
-    <div class="field"><label>Nome do destino</label><input id="f-name" value="${esc(trip?.name||'')}"></div>
-    <div class="field"><label>Descrição</label><textarea id="f-desc" rows="3">${esc(trip?.description||'')}</textarea></div>
-    <div class="form-row">
-      <div class="field"><label>Data de saída</label><input type="date" id="f-dep" value="${trip?.departure_date||''}"></div>
-      <div class="field"><label>Data de retorno</label><input type="date" id="f-ret" value="${trip?.return_date||''}"></div>
-    </div>
-    <div class="field"><label>Preço por pessoa (R$)</label><input type="number" step="0.01" id="f-price" value="${trip?.price||''}"></div>
-    <div class="field"><label>Imagem (${trip?.image_url?'substituir':'enviar'})</label><input type="file" id="f-img" accept="image/*"></div>
-    <div class="error-msg" id="form-error"></div>
-  `, `
-    <button class="btn btn-ghost" id="cancel-form">Cancelar</button>
-    <button class="btn btn-primary" id="save-form">Salvar</button>
-  `);
-  $('#cancel-form').onclick = closeModal;
-  $('#save-form').onclick = ()=> saveTrip(trip?.id||null);
-}
-
-async function saveTrip(id){
-  const errEl = $('#form-error');
-  errEl.textContent = '';
-  const name = $('#f-name').value.trim();
-  const description = $('#f-desc').value.trim();
-  const departure_date = $('#f-dep').value || null;
-  const return_date = $('#f-ret').value || null;
-  const price = parseFloat($('#f-price').value || 0);
-  const file = $('#f-img').files[0];
-
-  if(!name){ errEl.textContent = 'Informe o nome do destino.'; return; }
-  if(!price || price<=0){ errEl.textContent = 'Informe um preço válido.'; return; }
-  if(file){
-    if(!file.type.startsWith('image/')){ errEl.textContent = 'Arquivo precisa ser imagem.'; return; }
-    if(file.size > 5*1024*1024){ errEl.textContent = 'Imagem maior que 5MB.'; return; }
-  }
-
-  let image_url = id ? state.data.trips.find(t=>t.id===id)?.image_url : null;
-  if(file){
-    const path = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g,'')}`;
-    const { error: upErr } = await sb.storage.from(BUCKET_IMAGES).upload(path, file);
-    if(upErr){ errEl.textContent = 'Erro no upload: '+upErr.message; return; }
-    const { data: pub } = sb.storage.from(BUCKET_IMAGES).getPublicUrl(path);
-    image_url = pub.publicUrl;
-  }
-
-  const payload = { name, description, departure_date, return_date, price, image_url, updated_at: new Date().toISOString() };
-  let res;
-  if(id){
-    res = await sb.from('destinations').update(payload).eq('id', id);
-    await logActivity('update_trip', `Viagem ${id} atualizada`);
-  }else{
-    payload.is_active = false;
-    payload.created_at = new Date().toISOString();
-    res = await sb.from('destinations').insert(payload);
-    await logActivity('create_trip', `Viagem "${name}" criada`);
-  }
-  if(res.error){ errEl.textContent = 'Erro ao salvar: '+res.error.message; return; }
-  closeModal();
-  toast('Viagem salva.','success');
-  renderTrips();
-}
-
-async function toggleTrip(id){
-  const trip = state.data.trips.find(t=>t.id===id);
-  const { error } = await sb.from('destinations').update({ is_active: !trip.is_active }).eq('id', id);
-  if(error){ toast('Erro: '+error.message,'error'); return; }
-  await logActivity('toggle_trip', `Viagem ${id} ${trip.is_active?'despublicada':'publicada'}`);
-  toast(trip.is_active?'Despublicada.':'Publicada.','success');
-  renderTrips();
-}
-
-async function deleteTrip(id){
-  if(!confirm('Excluir esta viagem?')) return;
-  const { error } = await sb.from('destinations').delete().eq('id', id);
-  if(error){
-    if(error.message.includes('foreign key') || error.code === '23503'){
-      toast('Não é possível excluir: há reservas vinculadas a esta viagem.','error');
-    } else {
-      toast('Erro: '+error.message,'error');
-    }
-    return;
-  }
-  await logActivity('delete_trip', `Viagem ${id} excluída`);
-  toast('Viagem excluída.','success');
-  renderTrips();
-}
-
 /* =====================================================================
-   RESERVAS
+   RESERVAS — 'reservas'
    ===================================================================== */
 async function renderReservations(){
-  const { data, error } = await sb
-    .from('reservations')
-    .select('*, destinations(name)')
-    .order('created_at',{ascending:false});
+  const { data, error } = await sb.from('reservas').select('*');
   if(error) throw error;
   state.data.reservations = data || [];
 
   $('#view').innerHTML = `
-    <div class="table-wrap"><table>
-      <thead><tr><th>Cliente</th><th>Telefone</th><th>Viagem</th><th>Pax</th><th>Valor</th><th>Status</th><th>Data</th><th>Ações</th></tr></thead>
-      <tbody>
-        ${state.data.reservations.map(r=>`
-          <tr>
-            <td>${esc(r.customer_name)}</td>
-            <td>${esc(r.phone||'—')}</td>
-            <td>${esc(r.destinations?.name||'—')}</td>
-            <td>${r.passengers}</td>
-            <td>${fmtBRL(r.total_amount)}</td>
-            <td><span class="badge ${r.reservation_status}">${r.reservation_status}</span></td>
-            <td>${fmtDate(r.created_at)}</td>
-            <td class="row-actions">
-              <button class="btn btn-ghost btn-sm" data-act="status" data-id="${r.id}">Status</button>
-              <button class="btn btn-ghost btn-sm" data-act="whats" data-id="${r.id}">WhatsApp</button>
-              <button class="btn btn-danger btn-sm" data-act="del" data-id="${r.id}">Excluir</button>
-            </td>
-          </tr>`).join('') || '<tr><td colspan="8" class="empty">Sem reservas.</td></tr>'}
-      </tbody>
-    </table></div>`;
+    <div class="table-wrap">
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th>Cliente</th><th>Telefone</th><th>CPF</th><th>Destino</th><th>Assento</th><th>Pagamento</th><th>Ações</th></tr></thead>
+          <tbody>
+            ${state.data.reservations.map(r=>`
+              <tr>
+                <td>${esc(r.nome)}</td>
+                <td>${esc(r.telefone||'—')}</td>
+                <td>${esc(r.cpf||'—')}</td>
+                <td>${esc(r.destino||'—')}</td>
+                <td>${esc(r.assento??'—')}</td>
+                <td>${esc(r.pagamento||'—')}</td>
+                <td class="row-actions">
+                  <button class="btn btn-ghost btn-sm" data-act="whats" data-id="${r.id}">
+                    <i class="fab fa-whatsapp" style="color:#25d366"></i> WhatsApp
+                  </button>
+                  <button class="btn btn-danger btn-sm" data-act="del" data-id="${r.id}">
+                    <i class="fas fa-trash"></i> Excluir
+                  </button>
+                </td>
+              </tr>`).join('') || '<tr><td colspan="7" class="empty"><i class="fas fa-clipboard-list"></i>Sem reservas.</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
 
   $('#view').querySelectorAll('[data-act]').forEach(btn=>{
     const id = btn.dataset.id, act = btn.dataset.act;
     btn.onclick = ()=>{
-      if(act==='status') changeReservationStatus(id);
       if(act==='whats') openWhatsApp(id);
       if(act==='del') deleteReservation(id);
     };
   });
 }
 
-function changeReservationStatus(id){
-  const r = state.data.reservations.find(x=>x.id===id);
-  openModal('Alterar status', `
-    <div class="field"><label>Status</label>
-      <select id="f-status">
-        <option value="pending" ${r.reservation_status==='pending'?'selected':''}>Pendente</option>
-        <option value="confirmed" ${r.reservation_status==='confirmed'?'selected':''}>Confirmada</option>
-        <option value="cancelled" ${r.reservation_status==='cancelled'?'selected':''}>Cancelada</option>
-      </select>
-    </div>
-  `, `
-    <button class="btn btn-ghost" onclick="closeModal()">Cancelar</button>
-    <button class="btn btn-primary" id="save-status">Salvar</button>
-  `);
-  $('#save-status').onclick = async ()=>{
-    const status = $('#f-status').value;
-    const { error } = await sb.from('reservations').update({ reservation_status: status }).eq('id', id);
-    if(error){ toast('Erro: '+error.message,'error'); return; }
-    await logActivity('update_reservation_status', `Reserva ${id} → ${status}`);
-    closeModal();
-    toast('Status atualizado.','success');
-    renderReservations();
-  };
-}
-
 function openWhatsApp(id){
-  const r = state.data.reservations.find(x=>x.id===id);
-  const phone = (r.phone||'').replace(/\D/g,'');
+  const r = state.data.reservations.find(x=>String(x.id)===String(id));
+  if(!r) return;
+  const phone = (r.telefone||'').replace(/\D/g,'');
   if(!phone){ toast('Cliente sem telefone cadastrado.','error'); return; }
-  const msg = encodeURIComponent(`Olá ${r.customer_name}, sobre sua reserva #${String(r.id).slice(0,8)} para ${r.destinations?.name||'a viagem'}.`);
+  const msg = encodeURIComponent(`Olá ${r.nome}, sobre sua reserva para ${r.destino||'a viagem'} (assento ${r.assento}).`);
   window.open(`https://wa.me/55${phone}?text=${msg}`,'_blank');
 }
 
 async function deleteReservation(id){
   if(!confirm('Excluir esta reserva?')) return;
-  const { error } = await sb.from('reservations').delete().eq('id', id);
+  const { error } = await sb.from('reservas').delete().eq('id', id);
   if(error){ toast('Erro: '+error.message,'error'); return; }
-  await logActivity('delete_reservation', `Reserva ${id} excluída`);
   toast('Reserva excluída.','success');
   renderReservations();
 }
 
 /* =====================================================================
-   FINANCEIRO
+   FINANCEIRO / RELATÓRIOS / CONFIGURAÇÕES
+   (mantidos; só rodam se você reativar no MENU e as tabelas existirem)
    ===================================================================== */
 async function renderFinance(){
-  $('#page-actions').innerHTML = `<button class="btn btn-primary" id="new-tx-btn">+ Lançamento</button>`;
   const [txRes, tripRes] = await Promise.all([
     sb.from('financial_transactions').select('*, destinations(name)').order('transaction_date',{ascending:false}),
     sb.from('destinations').select('id,name').order('name'),
@@ -708,7 +774,6 @@ async function renderFinance(){
   const txs = txRes.data || [];
   state.data.transactions = txs;
   state.data.tripList = tripRes.data || [];
-
   const entradas = txs.filter(t=>t.type==='entrada').reduce((s,t)=>s+Number(t.amount||0),0);
   const despesas = txs.filter(t=>t.type==='despesa').reduce((s,t)=>s+Number(t.amount||0),0);
 
@@ -718,204 +783,24 @@ async function renderFinance(){
       <div class="card"><div class="label">Despesas</div><div class="value danger">${fmtBRL(despesas)}</div></div>
       <div class="card"><div class="label">Saldo</div><div class="value ${entradas-despesas>=0?'success':'danger'}">${fmtBRL(entradas-despesas)}</div></div>
     </div>
-    <div class="table-wrap"><table>
-      <thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Viagem</th><th>Valor</th><th>Ações</th></tr></thead>
-      <tbody>
-        ${txs.map(t=>`
-          <tr>
-            <td>${fmtDate(t.transaction_date)}</td>
-            <td><span class="badge ${t.type==='entrada'?'confirmed':'cancelled'}">${t.type}</span></td>
-            <td>${esc(t.description)}</td>
-            <td>${esc(t.destinations?.name||'—')}</td>
-            <td>${fmtBRL(t.amount)}</td>
-            <td><button class="btn btn-danger btn-sm" data-act="del-tx" data-id="${t.id}">Excluir</button></td>
-          </tr>`).join('') || '<tr><td colspan="6" class="empty">Sem lançamentos.</td></tr>'}
-      </tbody>
-    </table></div>`;
-
-  $('#new-tx-btn')?.addEventListener('click', openTxForm);
-  $('#view').querySelectorAll('[data-act="del-tx"]').forEach(btn=>{
-    btn.onclick = ()=> deleteTx(btn.dataset.id);
-  });
+    <div class="table-wrap"><div class="table-scroll"><table>
+      <thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Viagem</th><th>Valor</th></tr></thead>
+      <tbody>${txs.map(t=>`<tr><td>${fmtDate(t.transaction_date)}</td><td><span class="badge ${t.type==='entrada'?'confirmed':'cancelled'}">${t.type}</span></td><td>${esc(t.description)}</td><td>${esc(t.destinations?.name||'—')}</td><td>${fmtBRL(t.amount)}</td></tr>`).join('')||'<tr><td colspan="5" class="empty"><i class="fas fa-inbox"></i>Sem lançamentos.</td></tr>'}</tbody>
+    </table></div></div>`;
 }
 
-function openTxForm(){
-  openModal('Novo lançamento', `
-    <div class="field"><label>Tipo</label>
-      <select id="tx-type"><option value="entrada">Entrada</option><option value="despesa">Despesa</option></select>
-    </div>
-    <div class="field"><label>Descrição</label><input id="tx-desc"></div>
-    <div class="field"><label>Valor (R$)</label><input type="number" step="0.01" id="tx-amount"></div>
-    <div class="field"><label>Data</label><input type="date" id="tx-date" value="${new Date().toISOString().slice(0,10)}"></div>
-    <div class="field"><label>Viagem (opcional)</label>
-      <select id="tx-trip"><option value="">—</option>${state.data.tripList.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select>
-    </div>
-    <div class="error-msg" id="tx-error"></div>
-  `, `
-    <button class="btn btn-ghost" id="tx-cancel">Cancelar</button>
-    <button class="btn btn-primary" id="tx-save">Salvar</button>
-  `);
-  $('#tx-cancel').onclick = closeModal;
-  $('#tx-save').onclick = async ()=>{
-    const type = $('#tx-type').value;
-    const description = $('#tx-desc').value.trim();
-    const amount = parseFloat($('#tx-amount').value||0);
-    const transaction_date = $('#tx-date').value;
-    const destination_id = $('#tx-trip').value || null;
-    if(!description || amount<=0 || !transaction_date){ $('#tx-error').textContent='Preencha todos os campos.'; return; }
-    const { error } = await sb.from('financial_transactions').insert({ type, description, amount, transaction_date, destination_id });
-    if(error){ $('#tx-error').textContent = error.message; return; }
-    await logActivity('create_tx', `${type} ${fmtBRL(amount)} — ${description}`);
-    closeModal();
-    toast('Lançamento registrado.','success');
-    renderFinance();
-  };
-}
-
-async function deleteTx(id){
-  if(!confirm('Excluir este lançamento?')) return;
-  const { error } = await sb.from('financial_transactions').delete().eq('id', id);
-  if(error){ toast('Erro: '+error.message,'error'); return; }
-  await logActivity('delete_tx', `Lançamento ${id} excluído`);
-  toast('Lançamento excluído.','success');
-  renderFinance();
-}
+async function renderReports(){ $('#view').innerHTML = '<div class="empty"><i class="fas fa-chart-pie"></i>Módulo de relatórios disponível em breve.</div>'; }
+async function renderSettings(){ $('#view').innerHTML = '<div class="empty"><i class="fas fa-gear"></i>Módulo de configurações disponível em breve.</div>'; }
 
 /* =====================================================================
-   RELATÓRIOS
-   ===================================================================== */
-async function renderReports(){
-  const [txRes, tripRes] = await Promise.all([
-    sb.from('financial_transactions').select('*, destinations(name)').order('transaction_date',{ascending:false}),
-    sb.from('destinations').select('id,name').order('name'),
-  ]);
-  if(txRes.error) throw txRes.error;
-  const txs = txRes.data || [];
-  const trips = tripRes.data || [];
-  state.data.transactions = txs;
-  state.data.tripList = trips;
-
-  $('#view').innerHTML = `
-    <div class="cards" style="grid-template-columns:1fr 1fr 1fr">
-      <div class="field"><label>De</label><input type="date" id="rep-from"></div>
-      <div class="field"><label>Até</label><input type="date" id="rep-to"></div>
-      <div class="field"><label>Viagem</label>
-        <select id="rep-trip"><option value="">Todas</option>${trips.map(t=>`<option value="${t.id}">${esc(t.name)}</option>`).join('')}</select>
-      </div>
-    </div>
-    <div style="display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap">
-      <button class="btn btn-primary btn-sm" id="rep-filter">Filtrar</button>
-      <button class="btn btn-ghost btn-sm" id="rep-csv">Exportar CSV</button>
-      <button class="btn btn-ghost btn-sm" id="rep-pdf">Gerar PDF</button>
-    </div>
-    <div id="rep-results"></div>`;
-
-  const renderResults = (filtered)=>{
-    const entradas = filtered.filter(t=>t.type==='entrada').reduce((s,t)=>s+Number(t.amount||0),0);
-    const despesas = filtered.filter(t=>t.type==='despesa').reduce((s,t)=>s+Number(t.amount||0),0);
-    $('#rep-results').innerHTML = `
-      <div class="cards">
-        <div class="card"><div class="label">Entradas</div><div class="value success">${fmtBRL(entradas)}</div></div>
-        <div class="card"><div class="label">Despesas</div><div class="value danger">${fmtBRL(despesas)}</div></div>
-        <div class="card"><div class="label">Saldo</div><div class="value">${fmtBRL(entradas-despesas)}</div></div>
-        <div class="card"><div class="label">Lançamentos</div><div class="value">${filtered.length}</div></div>
-      </div>
-      <div class="table-wrap"><table>
-        <thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Viagem</th><th>Valor</th></tr></thead>
-        <tbody>${filtered.map(t=>`<tr><td>${fmtDate(t.transaction_date)}</td><td>${t.type}</td><td>${esc(t.description)}</td><td>${esc(t.destinations?.name||'—')}</td><td>${fmtBRL(t.amount)}</td></tr>`).join('')||'<tr><td colspan="5" class="empty">Sem dados.</td></tr>'}</tbody>
-      </table></div>`;
-  };
-
-  let current = [...txs];
-  renderResults(current);
-
-  $('#rep-filter').onclick = ()=>{
-    const from = $('#rep-from').value, to = $('#rep-to').value, trip = $('#rep-trip').value;
-    current = txs.filter(t=>{
-      if(from && t.transaction_date < from) return false;
-      if(to && t.transaction_date > to) return false;
-      if(trip && String(t.destination_id)!==trip) return false;
-      return true;
-    });
-    renderResults(current);
-  };
-
-  $('#rep-csv').onclick = ()=>{
-    const rows = [['Data','Tipo','Descrição','Viagem','Valor']];
-    current.forEach(t=>rows.push([t.transaction_date,t.type,t.description,t.destinations?.name||'',t.amount]));
-    const csv = rows.map(r=>r.map(c=>`"${String(c??'').replace(/"/g,'""')}"`).join(',')).join('\n');
-    const blob = new Blob([csv],{type:'text/csv;charset=utf-8'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `relatorio-${Date.now()}.csv`;
-    a.click();
-  };
-
-  $('#rep-pdf').onclick = ()=>{
-    const w = window.open('','_blank');
-    if(!w){ toast('Popup bloqueado. Permita popups.','error'); return; }
-    w.document.write(`<html><head><title>Relatório</title><style>body{font-family:sans-serif;padding:2rem}table{width:100%;border-collapse:collapse}th,td{border:1px solid #ccc;padding:.4rem;font-size:.85rem}th{background:#eee}</style></head><body>
-      <h2>Relatório Financeiro</h2><p>Gerado em ${new Date().toLocaleString('pt-BR')}</p>
-      <table><thead><tr><th>Data</th><th>Tipo</th><th>Descrição</th><th>Viagem</th><th>Valor</th></tr></thead>
-      <tbody>${current.map(t=>`<tr><td>${fmtDate(t.transaction_date)}</td><td>${t.type}</td><td>${esc(t.description)}</td><td>${esc(t.destinations?.name||'')}</td><td>${fmtBRL(t.amount)}</td></tr>`).join('')}</tbody></table>
-      </body></html>`);
-    w.document.close();
-    w.print();
-  };
-}
-
-/* =====================================================================
-   CONFIGURAÇÕES
-   ===================================================================== */
-async function renderSettings(){
-  const { data, error } = await sb.from('admin_users').select('id,user_id,role,created_at');
-  if(error) throw error;
-  state.data.admins = data || [];
-
-  $('#view').innerHTML = `
-    <div class="cards">
-      <div class="card"><div class="label">Seu papel</div><div class="value" style="font-size:1.1rem">${state.role}</div></div>
-      <div class="card"><div class="label">Permissões</div><div class="value" style="font-size:.85rem;font-weight:400">${state.permissions.join(', ')}</div></div>
-    </div>
-    <div class="table-wrap"><table>
-      <thead><tr><th>User ID</th><th>Papel</th><th>Criado em</th>${can('manage_users')?'<th>Ações</th>':''}</tr></thead>
-      <tbody>
-        ${state.data.admins.map(a=>`
-          <tr>
-            <td style="font-family:monospace;font-size:.75rem">${esc(a.user_id)}</td>
-            <td>${esc(a.role)}</td>
-            <td>${fmtDate(a.created_at)}</td>
-            ${can('manage_users')?`<td><button class="btn btn-danger btn-sm" data-del-admin="${a.id}">Remover</button></td>`:''}
-          </tr>`).join('') || '<tr><td colspan="4" class="empty">Nenhum admin.</td></tr>'}
-      </tbody>
-    </table></div>
-    <p style="margin-top:1rem;color:var(--muted);font-size:.8rem">Para adicionar admin: crie em Authentication → Users, depois <code>insert into admin_users(user_id,role) values ('&lt;uuid&gt;','owner');</code></p>`;
-
-  $('#view').querySelectorAll('[data-del-admin]').forEach(btn=>{
-    btn.onclick = async ()=>{
-      if(!confirm('Remover este administrador?')) return;
-      const { error } = await sb.from('admin_users').delete().eq('id', btn.dataset.delAdmin);
-      if(error){ toast('Erro: '+error.message,'error'); return; }
-      await logActivity('remove_admin', 'Administrador removido');
-      toast('Admin removido.','success');
-      renderSettings();
-    };
-  });
-}
-
-/* =====================================================================
-   BOOT — restaura sessão se já logado
+   BOOT
    ===================================================================== */
 (async ()=>{
   try {
     const { data:{ user }, error } = await sb.auth.getUser();
     if(error || !user) return;
-
-    const { data: adminRow, error: adminError } = await sb
-      .from('admin_users').select('role').eq('user_id', user.id).maybeSingle();
-
+    const { data: adminRow, error: adminError } = await sb.from('admin_users').select('role').eq('user_id', user.id).maybeSingle();
     if(adminError || !adminRow) return;
-
     const perms = ROLE_PERMISSIONS[adminRow.role];
     if(!perms) return;
 
@@ -929,9 +814,7 @@ async function renderSettings(){
     $('#user-role').textContent = adminRow.role;
     renderNav();
     navigate('dashboard');
-  } catch (err) {
-    console.warn('boot:', err);
-  }
+  } catch (err) { console.warn('boot:', err); }
 })();
 </script>
 </body>
