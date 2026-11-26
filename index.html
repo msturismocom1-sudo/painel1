@@ -469,9 +469,10 @@ const ROLE_PERMISSIONS = {
 };
 
 const MENU = [
-  { key:'dashboard',    label:'Dashboard', icon:'fa-chart-line',      title:'Dashboard', sub:'Visão geral' },
-  { key:'trips',        label:'Viagens',   icon:'fa-route',           title:'Viagens',   sub:'Destinos cadastrados' },
-  { key:'reservations', label:'Reservas',  icon:'fa-clipboard-list',  title:'Reservas',  sub:'Solicitações de clientes' },
+  { key:'dashboard',    label:'Dashboard',     icon:'fa-chart-line',     title:'Dashboard',     sub:'Visão geral' },
+  { key:'trips',        label:'Viagens',       icon:'fa-route',          title:'Viagens',       sub:'Destinos cadastrados' },
+  { key:'reservations', label:'Reservas',      icon:'fa-clipboard-list', title:'Reservas',      sub:'Solicitações de clientes' },
+  { key:'settings',     label:'Configurações', icon:'fa-gear',           title:'Configurações', sub:'Conta e segurança' },
 ];
 
 /* =====================================================================
@@ -617,6 +618,7 @@ async function navigate(page){
     if(page==='dashboard')    await renderDashboard();
     if(page==='trips')        await renderTrips();
     if(page==='reservations') await renderReservations();
+    if(page==='settings')     await renderSettings();
   }catch(err){
     console.error('Erro em', page, err);
     $('#view').innerHTML = `<div class="empty"><i class="fas fa-triangle-exclamation"></i>Erro ao carregar: ${esc(err.message)}</div>`;
@@ -976,6 +978,123 @@ async function deleteReservation(id){
   if(error){ toast('Erro: '+error.message,'error'); return; }
   toast('Reserva excluída.','success');
   renderReservations();
+}
+
+/* =====================================================================
+   CONFIGURAÇÕES — trocar senha + info da conta
+   ===================================================================== */
+async function renderSettings(){
+  $('#page-actions').innerHTML = '';
+
+  $('#view').innerHTML = `
+    <div class="table-wrap" style="max-width:560px">
+      <div style="padding:1.5rem">
+        <h3 style="font-size:1rem;margin-bottom:.25rem">
+          <i class="fas fa-user-shield" style="color:var(--blue-600)"></i>
+          Alterar senha
+        </h3>
+        <p style="color:var(--muted);font-size:.85rem;margin-bottom:1.25rem">
+          Digite sua senha atual e escolha uma nova senha com pelo menos 6 caracteres.
+        </p>
+
+        <div class="field">
+          <label>Senha atual</label>
+          <input type="password" id="pw-current" autocomplete="current-password" placeholder="••••••••">
+        </div>
+        <div class="field">
+          <label>Nova senha</label>
+          <input type="password" id="pw-new" autocomplete="new-password" placeholder="Mínimo 6 caracteres">
+        </div>
+        <div class="field">
+          <label>Confirmar nova senha</label>
+          <input type="password" id="pw-confirm" autocomplete="new-password" placeholder="Repita a nova senha">
+        </div>
+
+        <div class="error-msg" id="pw-error"></div>
+
+        <button class="btn btn-primary" id="pw-save" style="margin-top:.5rem">
+          <i class="fas fa-key"></i> Atualizar senha
+        </button>
+      </div>
+    </div>
+
+    <div class="table-wrap" style="max-width:560px;margin-top:1rem">
+      <div style="padding:1.5rem">
+        <h3 style="font-size:1rem;margin-bottom:.25rem">
+          <i class="fas fa-circle-info" style="color:var(--blue-600)"></i>
+          Informações da conta
+        </h3>
+        <table style="min-width:0;margin-top:.75rem">
+          <tbody>
+            <tr>
+              <td style="color:var(--muted);font-size:.8rem;width:120px">E-mail</td>
+              <td style="font-weight:600;font-size:.85rem">${esc(state.user?.email||'—')}</td>
+            </tr>
+            <tr>
+              <td style="color:var(--muted);font-size:.8rem">Perfil</td>
+              <td><span class="badge published">${esc(state.role||'—')}</span></td>
+            </tr>
+            <tr>
+              <td style="color:var(--muted);font-size:.8rem">Último login</td>
+              <td style="font-size:.85rem">${state.user?.last_sign_in_at ? new Date(state.user.last_sign_in_at).toLocaleString('pt-BR') : '—'}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  $('#pw-save').onclick = changePassword;
+}
+
+async function changePassword(){
+  const errEl = $('#pw-error');
+  const btn = $('#pw-save');
+  errEl.textContent = '';
+
+  const current = $('#pw-current').value;
+  const nova    = $('#pw-new').value;
+  const conf    = $('#pw-confirm').value;
+
+  // Validações
+  if(!current){ errEl.textContent = 'Informe a senha atual.'; return; }
+  if(!nova || nova.length < 6){ errEl.textContent = 'A nova senha deve ter pelo menos 6 caracteres.'; return; }
+  if(nova !== conf){ errEl.textContent = 'As senhas não coincidem.'; return; }
+  if(nova === current){ errEl.textContent = 'A nova senha deve ser diferente da atual.'; return; }
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Atualizando…';
+
+  try {
+    // 1) Confirma a senha atual fazendo login novamente
+    const { error: authErr } = await sb.auth.signInWithPassword({
+      email: state.user.email,
+      password: current,
+    });
+
+    if(authErr){
+      errEl.textContent = 'Senha atual incorreta.';
+      return;
+    }
+
+    // 2) Atualiza para a nova senha
+    const { error: updErr } = await sb.auth.updateUser({ password: nova });
+    if(updErr){ errEl.textContent = 'Erro ao atualizar: ' + updErr.message; return; }
+
+    // 3) Limpa os campos e loga a atividade
+    $('#pw-current').value = '';
+    $('#pw-new').value = '';
+    $('#pw-confirm').value = '';
+
+    await logActivity('password_changed', 'Usuário alterou a própria senha');
+    toast('Senha atualizada com sucesso!', 'success');
+
+  } catch(err){
+    errEl.textContent = 'Erro inesperado: ' + err.message;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-key"></i> Atualizar senha';
+  }
 }
 
 /* =====================================================================
