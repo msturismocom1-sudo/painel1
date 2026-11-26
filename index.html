@@ -4,10 +4,24 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Painel Administrativo — MS Turismo</title>
+
+<!-- CSP corrigido: permite Font Awesome (CSS + fontes), Google Fonts e Supabase (https + wss) -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com;
+  font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com;
+  connect-src 'self' https://xskuytsfwplrqhldwhhe.supabase.co wss://xskuytsfwplrqhldwhhe.supabase.co;
+  img-src 'self' data: https:;
+  object-src 'none';
+  base-uri 'self';
+">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
@@ -362,6 +376,46 @@
     .group-head{padding:.85rem 1rem}
     .group-title h3{font-size:.95rem}
   }
+
+  /* ============================================================
+     FALLBACK DE ÍCONES
+     Se o Font Awesome não carregar, os <i> ficam vazios.
+     Este bloco garante que o texto do botão continue visível
+     e que ícones "soltos" mostrem um símbolo Unicode.
+     ============================================================ */
+  .btn i, .nav-item i, .card i, .empty i, .group-icon i,
+  .modal i, .toast i, .close-x i, .mobile-menu-btn i {
+    font-style: normal;
+  }
+  i.fa-solid, i.fas, i.fa-regular, i.far, i.fa-brands, i.fab {
+    display: inline-block;
+    min-width: 1em;
+    text-align: center;
+  }
+  i.fa-plus::before        { content: "+"; }
+  i.fa-pen::before         { content: "✎"; }
+  i.fa-trash::before       { content: "🗑"; }
+  i.fa-whatsapp::before    { content: "✆"; }
+  i.fa-download::before    { content: "⤓"; }
+  i.fa-file-csv::before    { content: "⤓"; }
+  i.fa-check::before       { content: "✓"; }
+  i.fa-xmark::before       { content: "✕"; }
+  i.fa-key::before         { content: "🔑"; }
+  i.fa-gear::before        { content: "⚙"; }
+  i.fa-route::before       { content: "➤"; }
+  i.fa-bus::before         { content: "🚌"; }
+  i.fa-right-to-bracket::before { content: "→"; }
+  i.fa-right-from-bracket::before { content: "←"; }
+  i.fa-chart-line::before  { content: "📈"; }
+  i.fa-clipboard-list::before { content: "📋"; }
+  i.fa-bars::before        { content: "☰"; }
+  i.fa-map-location-dot::before { content: "📍"; }
+  i.fa-triangle-exclamation::before { content: "⚠"; }
+  i.fa-inbox::before       { content: "📥"; }
+  i.fa-circle-check::before{ content: "✓"; }
+  i.fa-circle-exclamation::before { content: "!"; }
+  i.fa-circle-info::before { content: "i"; }
+  i.fa-spinner::before     { content: "⟳"; }
 </style>
 </head>
 <body>
@@ -450,8 +504,37 @@
 
 <script>
 /* =====================================================================
-   CONFIGURAÇÃO
+   SEGURANÇA — SQL PARA RODAR NO SUPABASE (SQL Editor)
+   =====================================================================
+   ATENÇÃO: O RLS é a única barreira real. O frontend pode ser burlado.
+   Execute os comandos abaixo no SQL Editor do seu projeto Supabase.
+
+   -- 1) Ativar RLS em todas as tabelas sensíveis
+   alter table public.viagens     enable row level security;
+   alter table public.reservas    enable row level security;
+   alter table public.admin_users enable row level security;
+
+   -- 2) Reservas: apenas admins autenticados leem e excluem
+   create policy "Admins can view all reservations"
+     on public.reservas for select to authenticated
+     using (exists (select 1 from public.admin_users where user_id = auth.uid()));
+   create policy "Admins can delete reservations"
+     on public.reservas for delete to authenticated
+     using (exists (select 1 from public.admin_users where user_id = auth.uid()));
+
+   -- 3) Viagens: leitura pública (site), escrita apenas admins
+   create policy "Public can view trips"
+     on public.viagens for select to anon, authenticated using (true);
+   create policy "Admins can modify trips"
+     on public.viagens for all to authenticated
+     using (exists (select 1 from public.admin_users where user_id = auth.uid()));
+
+   -- 4) admin_users: cada usuário vê apenas o próprio registro
+   create policy "Users can view own admin record"
+     on public.admin_users for select to authenticated
+     using (user_id = auth.uid());
    ===================================================================== */
+
 const SUPABASE_URL = 'https://xskuytsfwplrqhldwhhe.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhza3V5dHNmd3BscnFobGR3aGhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQzMzg1NjIsImV4cCI6MjEwOTkxNDU2Mn0.yU582BL2vQRriWN4wiQLcQ07KiRjMJAOtnjPEykcwjc';
 
@@ -464,14 +547,15 @@ const state = { user:null, role:null, permissions:[], currentPage:'dashboard', d
 const ROLE_PERMISSIONS = {
   owner:       ['dashboard','trips','reservations','finance','reports','settings','manage_users'],
   admin:       ['dashboard','trips','reservations','finance','reports','settings'],
-  financeiro:  ['dashboard','finance','reports'],
-  visualizador:['dashboard','trips','reservations','reports'],
+  financeiro:  ['dashboard','finance','reports','settings'],
+  visualizador:['dashboard','trips','reservations','reports','settings'],
 };
 
 const MENU = [
-  { key:'dashboard',    label:'Dashboard', icon:'fa-chart-line',      title:'Dashboard', sub:'Visão geral' },
-  { key:'trips',        label:'Viagens',   icon:'fa-route',           title:'Viagens',   sub:'Destinos cadastrados' },
-  { key:'reservations', label:'Reservas',  icon:'fa-clipboard-list',  title:'Reservas',  sub:'Solicitações de clientes' },
+  { key:'dashboard',    label:'Dashboard',     icon:'fa-chart-line',     title:'Dashboard',     sub:'Visão geral' },
+  { key:'trips',        label:'Viagens',       icon:'fa-route',          title:'Viagens',       sub:'Destinos cadastrados' },
+  { key:'reservations', label:'Reservas',      icon:'fa-clipboard-list', title:'Reservas',      sub:'Solicitações de clientes' },
+  { key:'settings',     label:'Configurações', icon:'fa-gear',           title:'Configurações', sub:'Conta e segurança' },
 ];
 
 /* =====================================================================
@@ -617,6 +701,7 @@ async function navigate(page){
     if(page==='dashboard')    await renderDashboard();
     if(page==='trips')        await renderTrips();
     if(page==='reservations') await renderReservations();
+    if(page==='settings')     await renderSettings();
   }catch(err){
     console.error('Erro em', page, err);
     $('#view').innerHTML = `<div class="empty"><i class="fas fa-triangle-exclamation"></i>Erro ao carregar: ${esc(err.message)}</div>`;
@@ -901,10 +986,10 @@ async function renderReservations(){
                   <td>${esc(r.pagamento||'—')}</td>
                   <td class="row-actions">
                     <button class="btn btn-ghost btn-sm" data-act="whats" data-id="${r.id}" title="WhatsApp">
-                      <i class="fab fa-whatsapp" style="color:#25d366"></i>
+                      <i class="fab fa-whatsapp" style="color:#25d366"></i> WhatsApp
                     </button>
                     <button class="btn btn-danger btn-sm" data-act="del" data-id="${r.id}" title="Excluir">
-                      <i class="fas fa-trash"></i>
+                      <i class="fas fa-trash"></i> Excluir
                     </button>
                   </td>
                 </tr>`).join('')}
@@ -976,6 +1061,124 @@ async function deleteReservation(id){
   if(error){ toast('Erro: '+error.message,'error'); return; }
   toast('Reserva excluída.','success');
   renderReservations();
+}
+
+/* =====================================================================
+   CONFIGURAÇÕES — conta e segurança
+   ===================================================================== */
+async function renderSettings(){
+  $('#view').innerHTML = `
+    <div class="cards" style="grid-template-columns:repeat(auto-fill,minmax(320px,1fr))">
+      <div class="card">
+        <div class="label">Conta</div>
+        <div class="value" style="font-size:1rem;margin-top:.5rem;word-break:break-all">
+          ${esc(state.user?.email || '—')}
+        </div>
+        <div style="margin-top:.5rem">
+          <span class="badge published">${esc(state.role || '—')}</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="label">Segurança</div>
+        <p style="color:var(--muted);font-size:.85rem;margin:.5rem 0 .9rem">
+          Recomendamos trocar sua senha periodicamente e usar uma senha forte e única.
+        </p>
+        <button class="btn btn-primary btn-sm" id="change-password-btn">
+          <i class="fas fa-key"></i> Mudar senha
+        </button>
+      </div>
+    </div>
+  `;
+
+  $('#change-password-btn').onclick = openPasswordModal;
+}
+
+/* ---------- Modal: mudar senha ---------- */
+function openPasswordModal(){
+  openModal('Mudar senha', `
+    <div class="field">
+      <label for="pw-current">Senha atual *</label>
+      <input type="password" id="pw-current" autocomplete="current-password" placeholder="••••••••">
+    </div>
+    <div class="field">
+      <label for="pw-new">Nova senha *</label>
+      <input type="password" id="pw-new" autocomplete="new-password" placeholder="Mínimo 8 caracteres">
+    </div>
+    <div class="field">
+      <label for="pw-confirm">Confirmar nova senha *</label>
+      <input type="password" id="pw-confirm" autocomplete="new-password" placeholder="Repita a nova senha">
+    </div>
+    <div class="error-msg" id="pw-error"></div>
+  `, `
+    <button class="btn btn-ghost" id="pw-cancel">Cancelar</button>
+    <button class="btn btn-primary" id="pw-save">
+      <i class="fas fa-check"></i> Salvar nova senha
+    </button>
+  `);
+
+  $('#pw-cancel').onclick = closeModal;
+  $('#pw-save').onclick = changePassword;
+
+  ['pw-current','pw-new','pw-confirm'].forEach(id=>{
+    $('#'+id).addEventListener('keydown', e=>{
+      if(e.key === 'Enter'){ e.preventDefault(); changePassword(); }
+    });
+  });
+
+  setTimeout(()=>$('#pw-current')?.focus(), 50);
+}
+
+async function changePassword(){
+  const errEl = $('#pw-error');
+  errEl.textContent = '';
+
+  const currentPw = $('#pw-current').value;
+  const newPw     = $('#pw-new').value;
+  const confirmPw = $('#pw-confirm').value;
+
+  if(!currentPw){ errEl.textContent = 'Informe a senha atual.'; return; }
+  if(newPw.length < 8){ errEl.textContent = 'A nova senha deve ter no mínimo 8 caracteres.'; return; }
+  if(newPw === currentPw){ errEl.textContent = 'A nova senha deve ser diferente da atual.'; return; }
+  if(newPw !== confirmPw){ errEl.textContent = 'As senhas não coincidem.'; return; }
+  if(!state.user?.email){ errEl.textContent = 'Sessão inválida. Faça login novamente.'; return; }
+
+  const btn = $('#pw-save');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verificando…';
+
+  try {
+    const { error: reauthError } = await sb.auth.signInWithPassword({
+      email: state.user.email,
+      password: currentPw
+    });
+
+    if(reauthError){
+      errEl.textContent = 'Senha atual incorreta.';
+      return;
+    }
+
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando…';
+    const { error: updateError } = await sb.auth.updateUser({ password: newPw });
+
+    if(updateError){
+      errEl.textContent = 'Erro ao atualizar senha: ' + updateError.message;
+      return;
+    }
+
+    await logActivity('password_changed', 'Usuário alterou a própria senha');
+
+    closeModal();
+    toast('Senha alterada com sucesso. Faça login novamente.','success');
+    await sb.auth.signOut();
+    setTimeout(()=>location.reload(), 1500);
+
+  } catch(err){
+    errEl.textContent = 'Erro inesperado: ' + err.message;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-check"></i> Salvar nova senha';
+  }
 }
 
 /* =====================================================================
