@@ -765,8 +765,13 @@ function openTripForm(id=null){
       </div>
     </div>
     <div class="field">
-      <label>URL da imagem (opcional)</label>
-      <input id="f-img" value="${esc(trip?.imagem||'')}" placeholder="https://...">
+      <label>Foto da viagem (opcional)</label>
+      <input type="file" id="f-img-file" accept="image/*" style="padding:.55rem">
+      <small style="display:block;color:var(--muted);font-size:.75rem;margin-top:.35rem">
+        JPG, PNG ou WEBP · máx. 5 MB
+      </small>
+      <div id="f-img-preview" style="margin-top:.6rem"></div>
+      <input type="hidden" id="f-img" value="${esc(trip?.imagem||'')}">
     </div>
     <div class="error-msg" id="form-error"></div>
   `, `
@@ -775,6 +780,26 @@ function openTripForm(id=null){
       <i class="fas fa-check"></i> ${trip ? 'Salvar alterações' : 'Cadastrar viagem'}
     </button>
   `);
+
+  // Preview inicial (se já existir imagem)
+  const imgAtual = trip?.imagem || '';
+  if(imgAtual){
+    $('#f-img-preview').innerHTML = `
+      <img src="${esc(imgAtual)}" alt="Preview"
+           style="max-width:100%;max-height:160px;border-radius:10px;border:1px solid var(--border);object-fit:cover">
+    `;
+  }
+
+  // Preview ao escolher novo arquivo
+  $('#f-img-file').onchange = e=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const url = URL.createObjectURL(file);
+    $('#f-img-preview').innerHTML = `
+      <img src="${url}" alt="Preview"
+           style="max-width:100%;max-height:160px;border-radius:10px;border:1px solid var(--border);object-fit:cover">
+    `;
+  };
 
   $('#cancel-form').onclick = closeModal;
   $('#save-form').onclick = ()=> saveTrip(trip?.id || null);
@@ -790,40 +815,77 @@ async function saveTrip(id){
   const data_fim    = $('#f-ret').value || null;
   const preco       = parseFloat($('#f-price').value || 0);
   const modalidade  = $('#f-mod').value;
-  const imagem      = $('#f-img').value.trim() || null;
+  const fileInput   = $('#f-img-file');
+  const file        = fileInput.files[0] || null;
+  let   imagem      = $('#f-img').value.trim() || null;
 
   if(!nome){ errEl.textContent = 'Informe o nome do destino.'; return; }
   if(!preco || preco <= 0){ errEl.textContent = 'Informe um preço válido.'; return; }
 
-  const slug = nome.toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .replace(/[^a-z0-9]+/g,'-')
-    .replace(/^-+|-+$/g,'');
-
-  const payload = { nome, descricao, data_inicio, data_fim, preco, modalidade, imagem, slug };
+  if(file){
+    const MAX = 5 * 1024 * 1024;
+    if(file.size > MAX){ errEl.textContent = 'A imagem deve ter no máximo 5 MB.'; return; }
+    if(!file.type.startsWith('image/')){ errEl.textContent = 'Envie um arquivo de imagem válido.'; return; }
+  }
 
   const btn = $('#save-form');
   btn.disabled = true;
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando…';
 
-  let res;
-  if(id){
-    res = await sb.from('viagens').update(payload).eq('id', id);
-  } else {
-    res = await sb.from('viagens').insert(payload);
+  try {
+    if(file){
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g,'');
+      const slugBase = nome.toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+        .replace(/[^a-z0-9]+/g,'-')
+        .replace(/^-+|-+$/g,'') || 'viagem';
+      const fileName = `${slugBase}-${Date.now()}.${ext}`;
+
+      const { error: upErr } = await sb.storage
+        .from('viagens')
+        .upload(fileName, file, { cacheControl:'3600', upsert:false });
+
+      if(upErr){
+        errEl.textContent = 'Erro no upload: ' + upErr.message;
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-check"></i> Salvar';
+        return;
+      }
+
+      const { data: pub } = sb.storage.from('viagens').getPublicUrl(fileName);
+      imagem = pub.publicUrl;
+    }
+
+    const slug = nome.toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .replace(/[^a-z0-9]+/g,'-')
+      .replace(/^-+|-+$/g,'');
+
+    const payload = { nome, descricao, data_inicio, data_fim, preco, modalidade, imagem, slug };
+
+    let res;
+    if(id){
+      res = await sb.from('viagens').update(payload).eq('id', id);
+    } else {
+      res = await sb.from('viagens').insert(payload);
+    }
+
+    if(res.error){
+      errEl.textContent = 'Erro ao salvar: ' + res.error.message;
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-check"></i> Salvar';
+      return;
+    }
+
+    closeModal();
+    toast(id ? 'Viagem atualizada.' : 'Viagem cadastrada e publicada!','success');
+    renderTrips();
+
+  } catch(err){
+    errEl.textContent = 'Erro inesperado: ' + err.message;
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-check"></i> Salvar';
   }
-
-  btn.disabled = false;
-  btn.innerHTML = '<i class="fas fa-check"></i> Salvar';
-
-  if(res.error){
-    errEl.textContent = 'Erro ao salvar: ' + res.error.message;
-    return;
-  }
-
-  closeModal();
-  toast(id ? 'Viagem atualizada.' : 'Viagem cadastrada e publicada!','success');
-  renderTrips();
 }
 
 async function deleteTrip(id){
@@ -1056,7 +1118,6 @@ async function changePassword(){
   const nova    = $('#pw-new').value;
   const conf    = $('#pw-confirm').value;
 
-  // Validações
   if(!current){ errEl.textContent = 'Informe a senha atual.'; return; }
   if(!nova || nova.length < 6){ errEl.textContent = 'A nova senha deve ter pelo menos 6 caracteres.'; return; }
   if(nova !== conf){ errEl.textContent = 'As senhas não coincidem.'; return; }
@@ -1066,7 +1127,6 @@ async function changePassword(){
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Atualizando…';
 
   try {
-    // 1) Confirma a senha atual fazendo login novamente
     const { error: authErr } = await sb.auth.signInWithPassword({
       email: state.user.email,
       password: current,
@@ -1077,11 +1137,9 @@ async function changePassword(){
       return;
     }
 
-    // 2) Atualiza para a nova senha
     const { error: updErr } = await sb.auth.updateUser({ password: nova });
     if(updErr){ errEl.textContent = 'Erro ao atualizar: ' + updErr.message; return; }
 
-    // 3) Limpa os campos e loga a atividade
     $('#pw-current').value = '';
     $('#pw-new').value = '';
     $('#pw-confirm').value = '';
